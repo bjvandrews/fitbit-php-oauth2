@@ -1170,6 +1170,7 @@ class FitBitRateLimiting {
  */
 class FitbitProvider extends AbstractProvider {
     use BearerAuthorizationTrait;
+    const DEBUG = false;
 
     /**
      * Fitbit URL.
@@ -1239,9 +1240,11 @@ class FitbitProvider extends AbstractProvider {
      * @return void
      */
     protected function checkResponse(ResponseInterface $response, $data) {
-        error_log(json_encode($response));
-        error_log(json_encode($data));
-        error_log($response->getReasonPhrase());
+        if (static::DEBUG) {
+            error_log(json_encode($response));
+            error_log(json_encode($data));
+            error_log($response->getReasonPhrase());
+        }
         if ($response->getStatusCode() >= 400) {
             $message = "Failed: " . $response->getStatusCode();
             throw new IdentityProviderException($message, $response->getStatusCode(), $data);
