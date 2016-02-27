@@ -1175,7 +1175,7 @@ class FitbitProvider extends AbstractProvider {
      */
     const BASE_FITBIT_API_URL = 'https://api.fitbit.com';
 
-    protected $scope = ['activity', 'heartrate', 'location', 'profile', 'settings', 'sleep', 'social', 'weight'];
+    protected $scope = ['activity', 'heartrate', 'location', 'nutrition', 'profile', 'settings', 'sleep', 'social', 'weight'];
 
     /**
      * Get authorization url to begin OAuth flow

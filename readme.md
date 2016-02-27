@@ -23,7 +23,7 @@ try {
         'your_client_id',
         'your_client_secret',
         'your_post_authorization_redirect_url',
-        ['activity', 'heartrate', 'location', 'profile', 'settings', 'sleep', 'social', 'weight'], // desired scopes
+        ['activity', 'heartrate', 'location', 'nutrition', 'profile', 'settings', 'sleep', 'social', 'weight'], // desired scopes
         true  // produce some debugging output in error_log
     );
     
@@ -46,7 +46,7 @@ try {
         'your_client_id',
         'your_client_secret',
         'your_post_authorization_redirect_url',
-        ['activity', 'heartrate', 'location', 'profile', 'settings', 'sleep', 'social', 'weight'], // desired scopes
+        ['activity', 'heartrate', 'location', 'nutrition', 'profile', 'settings', 'sleep', 'social', 'weight'], // desired scopes
         true  // produce some debugging output in error_log
     );
     
@@ -67,7 +67,7 @@ try {
         'your_client_id',
         'your_client_secret',
         'your_post_authorization_redirect_url',
-        ['activity', 'heartrate', 'location', 'profile', 'settings', 'sleep', 'social', 'weight'], // desired scopes
+        ['activity', 'heartrate', 'location', 'nutrition', 'profile', 'settings', 'sleep', 'social', 'weight'], // desired scopes
         true  // produce some debugging output in error_log
     );
     $fitbit->set_token(getAccessTokenJsonFromMyDatabase());
