@@ -1080,7 +1080,7 @@ class FitBitPHPOauth2 {
         $this->get_or_refresh_token_if_missing_or_expired();
 
         $path = static::API_URL . $path . '.json' . (!empty($query) ? http_build_query($query) : "");
-        $this->debug("Read: {$path}");
+        $this->debug("GET: {$path}");
         $request = $this->provider->getAuthenticatedRequest('GET', $path, $this->access_token);
         return $this->process_request($request);
     }
@@ -1094,7 +1094,7 @@ class FitBitPHPOauth2 {
         $params = ['headers' => $headers, 'body' => $form_string];
 
         $path = static::API_URL . $path . '.json' . $query_string;
-        $this->debug("Update: {$path}");
+        $this->debug("POST: {$path}");
         $request = $this->provider->getAuthenticatedRequest('POST', $path, $this->access_token, $params);
         return $this->process_request($request);
     }
@@ -1112,12 +1112,22 @@ class FitBitPHPOauth2 {
     }
 
     private function delete($path, $parameters = null, $query = null) {
-        return $this->post($path, $parameters, $query);  // TODO: Check for 204
+        $this->get_or_refresh_token_if_missing_or_expired();
+
+        $query_string = !empty($query) ? http_build_query($query) : "";
+        $form_string = !empty($parameters) ? http_build_query($parameters) : "";
+        $headers['content-type'] = 'application/x-www-form-urlencoded';
+        $params = ['headers' => $headers, 'body' => $form_string];
+
+        $path = static::API_URL . $path . '.json' . $query_string;
+        $this->debug("DELETE: {$path}");
+        $request = $this->provider->getAuthenticatedRequest('DELETE', $path, $this->access_token, $params);
+        return $this->process_request($request);
     }
 
     private function debug($msg) {
         if ($this->debug) {
-            error_log($msg);
+            error_log(json_encode($msg));
         }
     }
 }
@@ -1229,8 +1239,8 @@ class FitbitProvider extends AbstractProvider {
      * @return void
      */
     protected function checkResponse(ResponseInterface $response, $data) {
-        error_log(print_r($response, true));
-        error_log(print_r($data, true));
+        error_log(json_encode($response));
+        error_log(json_encode($data));
         error_log($response->getReasonPhrase());
         if ($response->getStatusCode() >= 400) {
             $message = "Failed: " . $response->getStatusCode();
