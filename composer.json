@@ -1,0 +1,14 @@
+{
+    "name": "brulath/fitbit-php-oauth2",
+    "description": "FitBit OAuth 2.0 Client Library based heavily upon djchen/oauth2-fitbit & heyitspavel/fitbitphp",
+    "license": "MIT",
+    "require": {
+        "league/oauth2-client": "^1.3",
+        "djchen/oauth2-fitbit": "^0.2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "brulath\\fitbit\\": "src/"
+        }
+    }
+}
