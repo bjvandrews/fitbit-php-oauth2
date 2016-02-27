@@ -1232,7 +1232,7 @@ class FitbitProvider extends AbstractProvider {
         error_log(print_r($response, true));
         error_log(print_r($data, true));
         error_log($response->getReasonPhrase());
-        if ($response->getReasonPhrase() != 'OK') {
+        if ($response->getStatusCode() < 400) {
             $message = "Failed: " . $response->getStatusCode();
             throw new IdentityProviderException($message, $response->getStatusCode(), $data);
         }
