@@ -1001,7 +1001,7 @@ class FitBitPHPOauth2 {
      */
 
     private function create_provider() {
-        $provider = new Fitbit([
+        $provider = new FitbitProvider([
             'clientId' => $this->client_id,
             'clientSecret' => $this->client_secret,
             'redirectUri' => $this->redirect_uri,
@@ -1158,7 +1158,7 @@ class FitBitRateLimiting {
 /**
  * Copied here to fix error in checkResponse, otherwise identical to https://github.com/djchen/oauth2-fitbit
  */
-class Fitbit extends AbstractProvider {
+class FitbitProvider extends AbstractProvider {
     use BearerAuthorizationTrait;
 
     /**
