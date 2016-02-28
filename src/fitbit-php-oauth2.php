@@ -1254,7 +1254,8 @@ class FitBitRateLimiting {
 }
 
 /**
- * Copied here to fix error in checkResponse, otherwise identical to https://github.com/djchen/oauth2-fitbit
+ * Copied here to fix error in checkResponse and added scoping
+ * otherwise identical to https://github.com/djchen/oauth2-fitbit
  */
 class FitbitProvider extends AbstractProvider {
     use BearerAuthorizationTrait;
