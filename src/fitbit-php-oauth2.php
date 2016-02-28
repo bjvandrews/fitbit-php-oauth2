@@ -8,6 +8,7 @@ use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use League\OAuth2\Client\Token\AccessToken;
 use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
 use Psr\Http\Message\ResponseInterface;
+use Symfony\Component\Process\Exception\RuntimeException;
 
 /**
  * Fitbit PHP Oauth2 v.0.1. Basic Fitbit API wrapper for PHP using OAuth
@@ -23,17 +24,36 @@ use Psr\Http\Message\ResponseInterface;
 class FitBitPHPOauth2 {
     const API_URL = 'https://api.fitbit.com/1/';
 
+    /**
+     * @var FitbitProvider
+     */
     protected $provider;
+
+    /**
+     * @var string
+     */
     protected $client_id;
+
+    /**
+     * @var string
+     */
     protected $client_secret;
+
+    /**
+     * @var string
+     */
     protected $redirect_uri;
+
+    /**
+     * @var AccessToken
+     */
     protected $access_token;
 
     protected $metric = true;
     protected $user_agent = 'FitBitPHPOauth2 0.1';
-    protected $debug = false;
     protected $scope = ['activity', 'heartrate', 'location', 'profile', 'settings', 'sleep', 'social', 'weight'];
 
+    protected $debug = false;
     protected $automatically_request_token = true;
     protected $automatically_refresh_tokens = true;
 
@@ -61,7 +81,7 @@ class FitBitPHPOauth2 {
             if ($this->automatically_request_token) {
                 $this->do_auth_flow();
             } else {
-                throw new FitbitException("Token missing");
+                throw new FitbitTokenMissingException();
             }
         }
         return $this->access_token->jsonSerialize();
@@ -76,11 +96,88 @@ class FitBitPHPOauth2 {
 
     public function refresh_token() {
         if (empty($this->access_token)) {
-            throw new \RuntimeException("Not a valid token.");
+            throw new FitbitTokenMissingException();
         }
         $refresh_token = $this->access_token->getRefreshToken();
         $this->access_token = $this->provider->getAccessToken('refresh_token', ['refresh_token' => $refresh_token]);
         $this->debug("Received new access_token: " . print_r($this->access_token, true));
+    }
+
+    /**
+     * @return string Actual access token - does not include refresh or expiry
+     * @throws FitbitTokenMissingException
+     */
+    public function get_access_token() {
+        if (empty($this->access_token)) {
+            throw new FitbitTokenMissingException();
+        }
+        return $this->access_token->getToken();
+    }
+
+    /**
+     * @return string Actual refresh token
+     * @throws FitbitTokenMissingException
+     */
+    public function get_refresh_token() {
+        if (empty($this->access_token)) {
+            throw new FitbitTokenMissingException();
+        }
+        return $this->access_token->getRefreshToken();
+    }
+
+    /**
+     * @return int Expiration time of token (unix epoch)
+     * @throws FitbitTokenMissingException
+     */
+    public function get_token_expiry() {
+        if (empty($this->access_token)) {
+            throw new FitbitTokenMissingException();
+        }
+        return $this->access_token->getExpires();
+    }
+
+    /**
+     * @return FitbitUser
+     * @throws FitbitTokenMissingException
+     */
+    public function get_resource_owner() {
+        if (empty($this->access_token)) {
+            throw new FitbitTokenMissingException();
+        }
+        return $this->provider->getResourceOwner($this->access_token);
+    }
+
+    /**
+     * Perform the OAuth2 flow to acquire a valid FitBit API token for the current user
+     * This function requires:
+     *      the user to be accessing the current page using a web browser
+     *      the user & server have cookies enabled and can set 'fitbit-php-oauth2-state' cookie successfully
+     *      access to unmodified $_GET
+     *
+     * The user will be redirected to FitBit's API Authorization URL, after which they will be sent to the
+     * redirect_url specified on FitBit's website (and in this class's instantiation). You must call this function
+     * again when they arrive in order to obtain the state and code $_GET parameters.
+     *
+     * Upon completion of the auth flow you will either receive an exception (states don't match) or will be able to
+     * retrieve the token using get_token()
+     *
+     * @throws RuntimeException
+     */
+    public function do_auth_flow() {
+        if (!isset($_GET['code'])) {
+            // Must call getAuthorizationUrl first in order to generate the state (mitigate CSRF attacks)
+            $authorizationUrl = $this->provider->getAuthorizationUrl();
+            $_SESSION['fitbit-php-oauth2-state'] = $this->provider->getState();
+            // Note: do not use provider->authorize() - it will generate a new state that we cannot capture and check
+            header('Location: ' . $authorizationUrl);
+            exit;
+        } elseif (empty($_GET['state']) || ($_GET['state'] !== $_SESSION['fitbit-php-oauth2-state'])) {
+            unset($_SESSION['fitbit-php-oauth2-state']);
+            throw new \RuntimeException("Invalid state");
+        } else {
+            unset($_SESSION['fitbit-php-oauth2-state']);
+            $this->access_token = $this->provider->getAccessToken('authorization_code', ['code' => $_GET['code']]);
+        }
     }
 
     /**
@@ -278,7 +375,7 @@ class FitBitPHPOauth2 {
      * @return bool
      */
     public function addFavoriteActivity($id) {
-        return $this->create("user/-/activities/log/favorite/" . $id);
+        return $this->create("user/-/activities/favorite/" . $id);
     }
 
 
@@ -290,7 +387,7 @@ class FitBitPHPOauth2 {
      * @return bool
      */
     public function deleteFavoriteActivity($id) {
-        return $this->delete("user/-/activities/log/favorite/" . $id);
+        return $this->delete("user/-/activities/favorite/" . $id);
     }
 
 
@@ -938,21 +1035,35 @@ class FitBitPHPOauth2 {
      * @param string $id Subscription Id
      * @param string $path Subscription resource path (beginning with slash). Omit to subscribe to all user updates.
      * @param string $subscriberId ID to be returned by fitbit in their callbacks
+     * @param bool $delete_existing_subscriptions Remove any existing subscriptions for this access_token
      * @return mixed
      */
-    public function addSubscription($id, $path = null, $subscriberId = null) {
+    public function addSubscription($id, $path = null, $subscriberId = null, $delete_existing_subscriptions = false) {
+        if ($delete_existing_subscriptions) {
+            $this->delete_existing_subscriptions();
+        }
         $userHeaders = array();
         if ($subscriberId) {
             $userHeaders['X-Fitbit-Subscriber-Id'] = $subscriberId;
         }
-
-        if (isset($path)) {
-            $path = '/' . $path;
-        } else {
-            $path = '';
-        }
+        $path = !empty($path) ? "/{$path}" : '';
 
         return $this->post("user/-" . $path . "/apiSubscriptions/" . $id, null, null, $userHeaders);
+    }
+
+    /**
+     * Helper method; if you only have one subscriber end point, it's probably easiest to make sure any existing
+     * subscriptions are deleted before resubscribing; you'll get 409 conflict exceptions if the user is already
+     * subscribed to your client_id.
+     */
+    private function delete_existing_subscriptions() {
+        $subscriptions = $this->getSubscriptions();
+        if (!empty($subscriptions) && !empty($subscriptions['apiSubscriptions'])) {
+            foreach ($subscriptions['apiSubscriptions'] as &$subscription) {
+                $this->deleteSubscription($subscription['subscriptionId']);
+                $this->debug("Deleted subscription {$subscription['subscriptionId']}");
+            }
+        }
     }
 
 
@@ -965,12 +1076,7 @@ class FitBitPHPOauth2 {
      * @return bool
      */
     public function deleteSubscription($id, $path = null) {
-        if (isset($path)) {
-            $path = '/' . $path;
-        } else {
-            $path = '';
-        }
-
+        $path = !empty($path) ? "/{$path}" : '';
         return $this->delete("user/-" . $path . "/apiSubscriptions/" . $id);
     }
 
@@ -993,7 +1099,6 @@ class FitBitPHPOauth2 {
      * @return FitBitRateLimiting
      */
     public function getRateLimit() {
-
         $xmlClientAndUser = $this->read("account/clientAndViewerRateLimitStatus");
         $xmlClient = $this->read("account/clientRateLimitStatus");
         return new FitBitRateLimiting(
@@ -1011,6 +1116,10 @@ class FitBitPHPOauth2 {
      * Helpers
      */
 
+    /**
+     * Use League OAuth2
+     * @return FitbitProvider
+     */
     private function create_provider() {
         $provider = new FitbitProvider([
             'clientId' => $this->client_id,
@@ -1021,47 +1130,8 @@ class FitBitPHPOauth2 {
         return $provider;
     }
 
-    public function do_auth_flow() {
-        if (!isset($_GET['code'])) {
-            // Must call getAuthorizationUrl first in order to generate the state
-            // State is used to mitigate CSRF attacks
-            $authorizationUrl = $this->provider->getAuthorizationUrl();
-            $_SESSION['fitbit-php-oauth2-state'] = $this->provider->getState();
-            // Note: do not use provider->authorize() - it will generate a new state that we cannot capture
-            header('Location: ' . $authorizationUrl);
-            exit;
-        } elseif (empty($_GET['state']) || ($_GET['state'] !== $_SESSION['fitbit-php-oauth2-state'])) {
-            // Somehow skipped a beat and rocked our way into invalidity
-            unset($_SESSION['fitbit-php-oauth2-state']);
-            throw new \RuntimeException("Invalid state");
-        } else {
-            $this->access_token = $this->provider->getAccessToken('authorization_code', ['code' => $_GET['code']]);
-        }
-    }
-
     private function process_request($request) {
         return $this->provider->getResponse($request);
-    }
-
-    private function get_access_token() {
-        if (empty($this->access_token)) {
-            $this->do_auth_flow();
-        }
-        return $this->access_token->getToken();
-    }
-
-    private function get_refresh_token() {
-        if (empty($this->access_token)) {
-            throw new \RuntimeException("No token available to refresh.");
-        }
-        return $this->access_token->getRefreshToken();
-    }
-
-    private function get_token_expiry() {
-        if (empty($this->access_token)) {
-            throw new \RuntimeException("No token available to get expiry.");
-        }
-        return $this->access_token->getExpires();
     }
 
     private function has_token_expired() {
@@ -1076,23 +1146,16 @@ class FitBitPHPOauth2 {
             if ($this->automatically_request_token) {
                 $this->do_auth_flow();
             } else {
-                throw new FitbitException("Token missing");
+                throw new FitbitTokenMissingException();
             }
         }
         if ($this->has_token_expired()) {
             if ($this->automatically_refresh_tokens) {
                 $this->refresh_token();
             } else {
-                throw new FitbitException("Token expired");
+                throw new FitbitTokenExpiredException();
             }
         }
-    }
-
-    private function get_resource_owner() {
-        if (empty($this->access_token)) {
-            $this->do_auth_flow();
-        }
-        return $this->provider->getResourceOwner($this->access_token);
     }
 
     private function get($path, $query = null) {
@@ -1152,6 +1215,12 @@ class FitBitPHPOauth2 {
 }
 
 class FitbitException extends \Exception {
+}
+
+class FitbitTokenMissingException extends FitbitException {
+}
+
+class FitbitTokenExpiredException extends FitbitException {
 }
 
 class FitBitResponse {
