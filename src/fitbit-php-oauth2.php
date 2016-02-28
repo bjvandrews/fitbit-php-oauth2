@@ -34,7 +34,11 @@ class FitBitPHPOauth2 {
     protected $debug = false;
     protected $scope = ['activity', 'heartrate', 'location', 'profile', 'settings', 'sleep', 'social', 'weight'];
 
-    public function __construct($client_id, $client_secret, $redirect_uri, $scope, $debug = false) {
+    protected $automatically_request_token = true;
+    protected $automatically_refresh_tokens = true;
+
+    public function __construct($client_id, $client_secret, $redirect_uri, $scope, $debug = false,
+                                $auto_request = true,  $auto_refresh = true) {
         $this->client_id = $client_id;
         $this->client_secret = $client_secret;
         $this->redirect_uri = $redirect_uri;
@@ -42,16 +46,23 @@ class FitBitPHPOauth2 {
             $this->scope = $scope;
         }
         $this->debug = $debug;
+        $this->automatically_request_token = $auto_request;
+        $this->automatically_refresh_tokens = $auto_refresh;
         $this->provider = $this->create_provider();
     }
 
     /**
      * Get JSON-serialised token
+     * @throws FitbitException
      * @return mixed
      */
     public function get_token() {
         if (empty($this->access_token)) {
-            $this->do_auth_flow();
+            if ($this->automatically_request_token) {
+                $this->do_auth_flow();
+            } else {
+                throw new FitbitException("Token missing");
+            }
         }
         return $this->access_token->jsonSerialize();
     }
@@ -661,7 +672,7 @@ class FitBitPHPOauth2 {
      * Allowed types are:
      *            'caloriesIn', 'water'
      *
-     *            'caloriesOut', 'steps', 'distance', 'floors', 'elevation'
+     *            'caloriesOut', 'steps', 'distance', 'floors', 'elevation', 'heart',
      *            'minutesSedentary', 'minutesLightlyActive', 'minutesFairlyActive', 'minutesVeryActive',
      *            'activityCalories',
      *
@@ -683,23 +694,23 @@ class FitBitPHPOauth2 {
 
         switch ($type) {
             case 'caloriesIn':
-                $path = 'foods/log/caloriesIn';
+                $path = 'foods/caloriesIn';
                 break;
             case 'water':
-                $path = 'foods/log/water';
+                $path = 'foods/water';
                 break;
 
             case 'caloriesOut':
-                $path = 'activities/log/calories';
+                $path = 'activities/calories';
                 break;
             case 'steps':
-                $path = 'activities/log/steps';
+                $path = 'activities/steps';
                 break;
             case 'distance':
-                $path = 'activities/log/distance';
+                $path = 'activities/distance';
                 break;
             case 'floors':
-                $path = 'activities/log/floors';
+                $path = 'activities/floors';
                 break;
             case 'elevation':
                 $path = 'activities/elevation';
@@ -708,41 +719,41 @@ class FitBitPHPOauth2 {
                 $path = 'activities/heart';
                 break;
             case 'minutesSedentary':
-                $path = 'activities/log/minutesSedentary';
+                $path = 'activities/minutesSedentary';
                 break;
             case 'minutesLightlyActive':
-                $path = 'activities/log/minutesLightlyActive';
+                $path = 'activities/minutesLightlyActive';
                 break;
             case 'minutesFairlyActive':
-                $path = 'activities/log/minutesFairlyActive';
+                $path = 'activities/minutesFairlyActive';
                 break;
             case 'minutesVeryActive':
-                $path = 'activities/log/minutesVeryActive';
+                $path = 'activities/minutesVeryActive';
                 break;
             case 'activeScore':
-                $path = 'activities/log/activeScore';
+                $path = 'activities/activeScore';
                 break;
             case 'activityCalories':
-                $path = 'activities/log/activityCalories';
+                $path = 'activities/activityCalories';
                 break;
 
             case 'tracker_caloriesOut':
-                $path = 'activities/log/tracker/calories';
+                $path = 'activities/tracker/calories';
                 break;
             case 'tracker_steps':
-                $path = 'activities/log/tracker/steps';
+                $path = 'activities/tracker/steps';
                 break;
             case 'tracker_distance':
-                $path = 'activities/log/tracker/distance';
+                $path = 'activities/tracker/distance';
                 break;
             case 'tracker_floors':
-                $path = 'activities/log/tracker/floors';
+                $path = 'activities/tracker/floors';
                 break;
             case 'tracker_elevation':
-                $path = 'activities/log/tracker/elevation';
+                $path = 'activities/tracker/elevation';
                 break;
             case 'tracker_activeScore':
-                $path = 'activities/log/tracker/activeScore';
+                $path = 'activities/tracker/activeScore';
                 break;
 
             case 'startTime':
@@ -793,7 +804,7 @@ class FitBitPHPOauth2 {
      * Launch IntradayTimeSeries requests
      *
      * Allowed types are:
-     *            'calories', 'steps', 'floors', 'elevation', 'distance'
+     *            'calories', 'steps', 'floors', 'elevation', 'distance', 'heart'
      *
      * @throws FitBitException
      * @param string $type
@@ -805,16 +816,16 @@ class FitBitPHPOauth2 {
     public function getIntradayTimeSeries($type, $date, $start_time = null, $end_time = null) {
         switch ($type) {
             case 'calories':
-                $path = 'activities/log/calories';
+                $path = 'activities/calories';
                 break;
             case 'steps':
-                $path = 'activities/log/steps';
+                $path = 'activities/steps';
                 break;
             case 'floors':
-                $path = 'activities/log/floors';
+                $path = 'activities/floors';
                 break;
             case 'elevation':
-                $path = 'activities/log/elevation';
+                $path = 'activities/elevation';
                 break;
             case 'distance':
                 $path = 'activities/distance';
@@ -1010,7 +1021,7 @@ class FitBitPHPOauth2 {
         return $provider;
     }
 
-    private function do_auth_flow() {
+    public function do_auth_flow() {
         if (!isset($_GET['code'])) {
             // Must call getAuthorizationUrl first in order to generate the state
             // State is used to mitigate CSRF attacks
@@ -1062,10 +1073,18 @@ class FitBitPHPOauth2 {
 
     private function get_or_refresh_token_if_missing_or_expired() {
         if (empty($this->access_token)) {
-            $this->do_auth_flow();
+            if ($this->automatically_request_token) {
+                $this->do_auth_flow();
+            } else {
+                throw new FitbitException("Token missing");
+            }
         }
         if ($this->has_token_expired()) {
-            $this->refresh_token();
+            if ($this->automatically_refresh_tokens) {
+                $this->refresh_token();
+            } else {
+                throw new FitbitException("Token expired");
+            }
         }
     }
 

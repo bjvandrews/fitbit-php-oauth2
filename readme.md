@@ -15,6 +15,13 @@ Add ```"brulath/fitbit-php-oauth2": "@dev"``` to your composer.json file's ```re
 
 ## Usage
 
+### Warning
+
+I'm lazy, so I've made this library automatically refresh oauth details whenever they've expired mid-call. That means
+ after any call the oauth token may have changed, which you will need to check for (and save the new token). I figure
+ it's probably easier to check for changed tokens than catching token expiration exceptions and handling those.
+ Soz brah.
+
 ### Magic token acquisition
 
 ```php
@@ -73,6 +80,7 @@ try {
     $fitbit->set_token(getAccessTokenJsonFromMyDatabase());
     
     $activities = $fitbit->getActivities('2016-02-20');
+    storeAccessTokenIfItChanged($fitbit->get_token());
     print_r($activities);
 } catch (\Exception $e) {
     print($e);
