@@ -1134,7 +1134,7 @@ class FitBitPHPOauth2 {
         return $this->provider->getResponse($request);
     }
 
-    private function has_token_expired() {
+    public function has_token_expired() {
         if (empty($this->access_token)) {
             throw new \RuntimeException("No token available to check.");
         }
@@ -1215,12 +1215,15 @@ class FitBitPHPOauth2 {
 }
 
 class FitbitException extends \Exception {
+    protected $message = "Unknown Fitbit Exception";
 }
 
 class FitbitTokenMissingException extends FitbitException {
+    protected $message = "Fitbit oauth token missing";
 }
 
 class FitbitTokenExpiredException extends FitbitException {
+    protected $message = "Fitbit oauth token expired";
 }
 
 class FitBitResponse {
@@ -1254,8 +1257,7 @@ class FitBitRateLimiting {
 }
 
 /**
- * Copied here to fix error in checkResponse and added scoping
- * otherwise identical to https://github.com/djchen/oauth2-fitbit
+ * Copied here to fix error in checkResponse, otherwise identical to https://github.com/djchen/oauth2-fitbit
  */
 class FitbitProvider extends AbstractProvider {
     use BearerAuthorizationTrait;
