@@ -72,6 +72,20 @@ class FitBitPHPOauth2 {
     }
 
     /**
+     * Fitbit-specific method to convert an OAuth 1.0 token to an OAuth 2.0 one
+     * This may be disabled by Fitbit at any time.
+     *
+     * @param $oauth1_token string Existing valid oauth1 token for a user
+     * @param $oauth1_secret string Existing valid oauth1 secret for a user
+     * @returns Mixed OAuth2 json-serialized token [access_token, refresh_token, expires] for use in this library
+     */
+    public function get_oauth2_token_for_oauth1_user($oauth1_token, $oauth1_secret) {
+        $refresh_token = "{$oauth1_token}:{$oauth1_secret}";
+        $token = $this->provider->getAccessToken('refresh_token', ['refresh_token' => $refresh_token]);
+        return $token->jsonSerialize();
+    }
+
+    /**
      * Get JSON-serialised token
      * @throws FitbitException
      * @return mixed
