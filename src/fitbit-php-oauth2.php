@@ -11,14 +11,14 @@ use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\Process\Exception\RuntimeException;
 
 /**
- * Fitbit PHP Oauth2 v.0.1. Basic Fitbit API wrapper for PHP using OAuth
+ * Fitbit PHP Oauth2 v.1.0.0 Basic Fitbit API wrapper for PHP using OAuth
  * Heavily based upon https://github.com/heyitspavel/fitbitphp & https://github.com/djchen/oauth2-fitbit
  *
  * Sets a fitbit-php-oauth2-state cookie during auth flow to prevent CSRF attacks. A session must be started beforehand.
  *
  * Date: 2015/02/26
  * Requires https://github.com/thephpleague/oauth2-client
- * @version 0.1 ($Id$)
+ * @version 1.0.0 ($Id$)
  * @license http://opensource.org/licenses/MIT MIT
  */
 class FitBitPHPOauth2 {
