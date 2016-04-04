@@ -907,7 +907,7 @@ class FitBitPHPOauth2 {
                 return false;
         }
 
-        return $this->read("user/-" . $path . "/date/{$base_date}/{$to_period}");
+        return $this->read("user/-/" . $path . "/date/{$base_date}/{$to_period}");
     }
 
 
