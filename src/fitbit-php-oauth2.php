@@ -1152,7 +1152,7 @@ class FitBitPHPOauth2 {
         if (empty($this->access_token)) {
             throw new \RuntimeException("No token available to check.");
         }
-        return $this->access_token->hasExpired() == 'expired';
+        return $this->access_token->hasExpired();
     }
 
     private function get_or_refresh_token_if_missing_or_expired() {
