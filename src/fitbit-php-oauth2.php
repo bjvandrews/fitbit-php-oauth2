@@ -50,7 +50,7 @@ class FitBitPHPOauth2 {
     protected $access_token;
 
     protected $metric = true;
-    protected $user_agent = 'FitBitPHPOauth2 0.1';
+    protected $user_agent = 'FitBitPHPOauth2 1.0.0';
     protected $scope = ['activity', 'heartrate', 'location', 'profile', 'settings', 'sleep', 'social', 'weight'];
 
     protected $debug = false;
