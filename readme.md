@@ -11,7 +11,7 @@ Not guaranteed to work under any circumstances, but it's nice when it does.
 
 To install, use composer:
 
-Add ```"brulath/fitbit-php-oauth2": "@dev"``` to your composer.json file's ```require``` section, then ```composer update```.
+```composer require brulath/fitbit-php-oauth2```
 
 ## Usage
 
