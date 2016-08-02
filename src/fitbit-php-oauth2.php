@@ -436,7 +436,7 @@ class FitBitPHPOauth2 {
      * @return mixed FitbitResponse
      */
     public function getFoods($date) {
-        $this->read("user/-/foods/log/date/" . $date);
+        return $this->read("user/-/foods/log/date/" . $date);
     }
 
 
