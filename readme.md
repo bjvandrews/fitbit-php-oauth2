@@ -1,7 +1,7 @@
 # Unofficial Fitbit Client Library for PHP using OAuth2
 
 Wholesale borrows large portions of [djchen/OAuth2-Fitbit](https://github.com/djchen/oauth2-fitbit) (minor change to
- error checking and scope handling) and [heyitspavel/fitbitphp](https://github.com/djchen/oauth2-fitbit).
+ error checking and scope handling) and [pavelrisenberg/fitbitphp](https://github.com/pavelrisenberg/fitbitphp).
 
 Sets a fitbit-php-oauth2-state cookie during auth flow to prevent CSRF attacks. A session must be started beforehand.
 
