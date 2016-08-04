@@ -1351,7 +1351,7 @@ class FitbitProvider extends AbstractProvider {
             error_log($response->getReasonPhrase());
         }
         if ($response->getStatusCode() >= 400) {
-            $message = "Failed: " . $response->getStatusCode() . " " . json_encode($response);
+            $message = "Failed: " . $response->getStatusCode() . " " . $response->getReasonPhrase();
             throw new IdentityProviderException($message, $response->getStatusCode(), $data);
         }
     }
