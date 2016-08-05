@@ -2,13 +2,7 @@
 
 namespace brulath\fitbit;
 
-use League\OAuth2\Client\Provider\AbstractProvider;
-use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
-use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use League\OAuth2\Client\Token\AccessToken;
-use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
-use Psr\Http\Message\ResponseInterface;
-use Symfony\Component\Process\Exception\RuntimeException;
 
 /**
  * Fitbit PHP Oauth2 v.1.0.0 Basic Fitbit API wrapper for PHP using OAuth
@@ -21,7 +15,7 @@ use Symfony\Component\Process\Exception\RuntimeException;
  * @version 1.0.0 ($Id$)
  * @license http://opensource.org/licenses/MIT MIT
  */
-class FitBitPHPOauth2 {
+class FitbitPHPOauth2 {
     const API_URL = 'https://api.fitbit.com/1/';
 
     /**
@@ -50,7 +44,7 @@ class FitBitPHPOauth2 {
     protected $access_token;
 
     protected $metric = true;
-    protected $user_agent = 'FitBitPHPOauth2 1.0.0';
+    protected $user_agent = 'FitbitPHPOauth2 1.0.0';
     protected $scope = ['activity', 'heartrate', 'location', 'profile', 'settings', 'sleep', 'social', 'weight'];
 
     protected $debug = false;
@@ -162,14 +156,14 @@ class FitBitPHPOauth2 {
     }
 
     /**
-     * Perform the OAuth2 flow to acquire a valid FitBit API token for the current user
+     * Perform the OAuth2 flow to acquire a valid Fitbit API token for the current user
      * This function requires:
      *      the user to be accessing the current page using a web browser
      *      the user & server have cookies enabled and can set 'fitbit-php-oauth2-state' cookie successfully
      *      access to unmodified $_GET
      *
-     * The user will be redirected to FitBit's API Authorization URL, after which they will be sent to the
-     * redirect_url specified on FitBit's website (and in this class's instantiation). You must call this function
+     * The user will be redirected to Fitbit's API Authorization URL, after which they will be sent to the
+     * redirect_url specified on Fitbit's website (and in this class's instantiation). You must call this function
      * again when they arrive in order to obtain the state and code $_GET parameters.
      *
      * Upon completion of the auth flow you will either receive an exception (states don't match) or will be able to
@@ -197,7 +191,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user profile
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed JSON
      */
     public function getProfile() {
@@ -207,7 +201,7 @@ class FitBitPHPOauth2 {
     /**
      * Update user profile
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $gender 'FEMALE', 'MALE' or 'NA'
      * @param string $birthday Date of birth
      * @param string $height Height in cm/inches (as set with setMetric)
@@ -230,7 +224,7 @@ class FitBitPHPOauth2 {
 
     /**
      * https://wiki.fitbit.com/display/API/API-Get-Activity-Daily-Goals
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed FitbitResponse
      */
     public function getDailyGoals() {
@@ -259,7 +253,7 @@ class FitBitPHPOauth2 {
 
     /**
      * https://wiki.fitbit.com/display/API/API-Get-Activity-Weekly-Goals
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed FitbitResponse
      */
     public function getWeeklyGoals() {
@@ -286,7 +280,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user activities for specific date
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param  string $date Y-m-d
      * @return mixed FitbitResponse
      */
@@ -298,7 +292,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user recent activities
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed FitbitResponse
      */
     public function getRecentActivities() {
@@ -309,7 +303,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user frequent activities
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed FitbitResponse
      */
     public function getFrequentActivities() {
@@ -320,7 +314,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user favorite activities
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed FitbitResponse
      */
     public function getFavoriteActivities() {
@@ -331,7 +325,7 @@ class FitBitPHPOauth2 {
     /**
      * Log user activity
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $date Activity date Y-m-d
      * @param string $time Activity time H:i
      * @param string $activityId Activity Id (or Intensity Level Id) from activities database,
@@ -372,7 +366,7 @@ class FitBitPHPOauth2 {
     /**
      * Delete user activity
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $id Activity log id
      * @return bool
      */
@@ -384,7 +378,7 @@ class FitBitPHPOauth2 {
     /**
      * Add user favorite activity
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $id Activity log id
      * @return bool
      */
@@ -396,7 +390,7 @@ class FitBitPHPOauth2 {
     /**
      * Delete user favorite activity
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $id Activity log id
      * @return bool
      */
@@ -408,7 +402,7 @@ class FitBitPHPOauth2 {
     /**
      * Get full description of specific activity
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param  string $id Activity log Id
      * @return mixed FitbitResponse
      */
@@ -420,7 +414,7 @@ class FitBitPHPOauth2 {
     /**
      * Get a tree of all valid Fitbit public activities as well as private custom activities the user createds
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed FitbitResponse
      */
     public function browseActivities() {
@@ -431,7 +425,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user foods for specific date
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param  string $date Y-m-d
      * @return mixed FitbitResponse
      */
@@ -443,7 +437,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user recent foods
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed FitbitResponse
      */
     public function getRecentFoods() {
@@ -454,7 +448,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user frequent foods
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed FitbitResponse
      */
     public function getFrequentFoods() {
@@ -465,7 +459,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user favorite foods
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed FitbitResponse
      */
     public function getFavoriteFoods() {
@@ -476,7 +470,7 @@ class FitBitPHPOauth2 {
     /**
      * Log user food
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $date Y-m-d Food log date
      * @param string $foodId Food Id from foods database (see searchFoods)
      * @param string $mealTypeId Meal Type Id from foods database (see searchFoods)
@@ -516,7 +510,7 @@ class FitBitPHPOauth2 {
     /**
      * Delete user food
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $id Food log id
      * @return bool
      */
@@ -528,7 +522,7 @@ class FitBitPHPOauth2 {
     /**
      * Add user favorite food
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $id Food log id
      * @return bool
      */
@@ -540,7 +534,7 @@ class FitBitPHPOauth2 {
     /**
      * Delete user favorite food
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $id Food log id
      * @return bool
      */
@@ -552,7 +546,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user meal sets
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed FitbitResponse
      */
     public function getMeals() {
@@ -563,7 +557,7 @@ class FitBitPHPOauth2 {
     /**
      * Get food units library
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed FitbitResponse
      */
     public function getFoodUnits() {
@@ -574,7 +568,7 @@ class FitBitPHPOauth2 {
     /**
      * Search for foods in foods database
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $query Search query
      * @return mixed FitbitResponse
      */
@@ -586,7 +580,7 @@ class FitBitPHPOauth2 {
     /**
      * Get description of specific food from food db (or private for the user)
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param  string $id Food Id
      * @return mixed FitbitResponse
      */
@@ -598,7 +592,7 @@ class FitBitPHPOauth2 {
     /**
      * Create private foods for a user
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $name Food name
      * @param string $defaultFoodMeasurementUnitId Unit id of the default measurement unit
      * @param string $defaultServingSize Default serving size in measurement units
@@ -633,7 +627,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user water log entries for specific date
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param  string $date Y-m-d
      * @return mixed FitbitResponse
      */
@@ -645,7 +639,7 @@ class FitBitPHPOauth2 {
     /**
      * Log user water
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $date Y-m-d Log entry date (set proper timezone, which could be fetched via getProfile)
      * @param string $amount Amount in ml/fl oz (as set with setMetric) or waterUnit
      * @param string $waterUnit Water Unit ("ml", "fl oz" or "cup")
@@ -668,7 +662,7 @@ class FitBitPHPOauth2 {
     /**
      * Delete user water record
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $id Water log id
      * @return bool
      */
@@ -680,7 +674,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user sleep log entries for specific date
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param  string $date Y-m-d
      * @return mixed FitbitResponse
      */
@@ -692,7 +686,7 @@ class FitBitPHPOauth2 {
     /**
      * Log user sleep
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $date Sleep date Y-m-d
      * @param string $start_time Sleep start time H:i
      * @param string $duration Duration millis
@@ -711,7 +705,7 @@ class FitBitPHPOauth2 {
     /**
      * Delete user sleep record
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $id Activity log id
      * @return bool
      */
@@ -723,7 +717,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user fat goal
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed FitbitResponse
      */
     public function getFatGoal() {
@@ -733,7 +727,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user body measurements
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param  string $date Y-m-d
      * @return mixed FitbitResponse
      */
@@ -744,7 +738,7 @@ class FitBitPHPOauth2 {
     /**
      * Log user body measurements
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $date Y-m-d Date Log entry date (set proper timezone, which could be fetched via getProfile)
      * @param string $weight Float number. For en_GB units, provide floating number of stones (i.e. 11 st. 4 lbs = 11.2857143)
      * @param string $fat Float number
@@ -764,7 +758,7 @@ class FitBitPHPOauth2 {
     /**
      * Log user weight
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $weight Float number. For en_GB units, provide floating number of stones (i.e. 11 st. 4 lbs = 11.2857143)
      * @param string $date Y-m-d If present, log entry date, now by default (set proper timezone, which could be fetched via getProfile)
      * @return bool
@@ -795,7 +789,7 @@ class FitBitPHPOauth2 {
      *
      *            'weight', 'bmi', 'fat'
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $type
      * @param  $base_date string Y-m-d or 'today', to_period
      * @param  $to_period string Y-m-d or '1d, 7d, 30d, 1w, 1m, 3m, 6m, 1y, max'
@@ -917,7 +911,7 @@ class FitBitPHPOauth2 {
      * Allowed types are:
      *            'calories', 'steps', 'floors', 'elevation', 'distance', 'heart'
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $type
      * @param  $date string Y-m-d or 'today'
      * @param  $start_time string Y-m-d
@@ -958,7 +952,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user's activity statistics (lifetime statistics from the tracker device and total numbers including the manual activity log entries)
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed FitbitResponse
      */
     public function getActivityStats() {
@@ -969,7 +963,7 @@ class FitBitPHPOauth2 {
     /**
      * Get list of devices and their properties
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed FitbitResponse
      */
     public function getDevices() {
@@ -979,7 +973,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user friends
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed FitbitResponse
      */
     public function getFriends() {
@@ -989,7 +983,7 @@ class FitBitPHPOauth2 {
     /**
      * Get user's friends leaderboard
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $period Depth ('7d' or '30d')
      * @return mixed FitbitResponse
      */
@@ -1000,7 +994,7 @@ class FitBitPHPOauth2 {
     /**
      * Invite user to become friends
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $invitedUserId Invite user by id
      * @param string $invitedUserEmail Invite user by email address (could be already Fitbit member or not)
      * @return bool
@@ -1017,7 +1011,7 @@ class FitBitPHPOauth2 {
     /**
      * Accept invite to become friends from user
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $userId Id of the inviting user
      * @return bool
      */
@@ -1031,7 +1025,7 @@ class FitBitPHPOauth2 {
     /**
      * Accept invite to become friends from user
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $userId Id of the inviting user
      * @return bool
      */
@@ -1045,7 +1039,7 @@ class FitBitPHPOauth2 {
     /**
      * Add subscription
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $id Subscription Id
      * @param string $path Subscription resource path (beginning with slash). Omit to subscribe to all user updates.
      * @param string $subscriberId ID to be returned by fitbit in their callbacks
@@ -1084,7 +1078,7 @@ class FitBitPHPOauth2 {
     /**
      * Delete user subscription
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @param string $id Subscription Id
      * @param string $path Subscription resource path (beginning with slash)
      * @return bool
@@ -1098,7 +1092,7 @@ class FitBitPHPOauth2 {
     /**
      * Get list of user's subscriptions for this application
      *
-     * @throws FitBitException
+     * @throws FitbitException
      * @return mixed
      */
     public function getSubscriptions() {
@@ -1109,13 +1103,13 @@ class FitBitPHPOauth2 {
     /**
      * Get CLIENT+VIEWER and CLIENT rate limiting quota status
      *
-     * @throws FitBitException
-     * @return FitBitRateLimiting
+     * @throws FitbitException
+     * @return FitbitRateLimiting
      */
     public function getRateLimit() {
         $xmlClientAndUser = $this->read("account/clientAndViewerRateLimitStatus");
         $xmlClient = $this->read("account/clientRateLimitStatus");
-        return new FitBitRateLimiting(
+        return new FitbitRateLimiting(
             $xmlClientAndUser['rateLimitStatus']['remainingHits'],
             $xmlClient['rateLimitStatus']['remainingHits'],
             $xmlClientAndUser['rateLimitStatus']['resetTime'],
@@ -1225,230 +1219,5 @@ class FitBitPHPOauth2 {
         if ($this->debug) {
             error_log(json_encode($msg));
         }
-    }
-}
-
-class FitbitException extends \Exception {
-    protected $message = "Unknown Fitbit Exception";
-}
-
-class FitbitTokenMissingException extends FitbitException {
-    protected $message = "Fitbit oauth token missing";
-}
-
-class FitbitTokenExpiredException extends FitbitException {
-    protected $message = "Fitbit oauth token expired";
-}
-
-class FitBitResponse {
-    public $response;
-    public $code;
-
-    public function __construct($response, $success) {
-        $this->response = $response;
-        $this->success = $success;
-    }
-
-}
-
-class FitBitRateLimiting {
-    public $viewer;
-    public $viewerReset;
-    public $viewerQuota;
-    public $client;
-    public $clientReset;
-    public $clientQuota;
-
-    public function __construct($viewer, $client, $viewerReset = null, $clientReset = null, $viewerQuota = null, $clientQuota = null) {
-        $this->viewer = $viewer;
-        $this->viewerReset = $viewerReset;
-        $this->viewerQuota = $viewerQuota;
-        $this->client = $client;
-        $this->clientReset = $clientReset;
-        $this->clientQuota = $clientQuota;
-    }
-
-}
-
-/**
- * Copied here to fix error in checkResponse, otherwise identical to https://github.com/djchen/oauth2-fitbit
- */
-class FitbitProvider extends AbstractProvider {
-    use BearerAuthorizationTrait;
-    const DEBUG = false;
-
-    /**
-     * Fitbit URL.
-     *
-     * @const string
-     */
-    const BASE_FITBIT_URL = 'https://www.fitbit.com';
-
-    /**
-     * Fitbit API URL.
-     *
-     * @const string
-     */
-    const BASE_FITBIT_API_URL = 'https://api.fitbit.com';
-
-    protected $scope = ['activity', 'heartrate', 'location', 'nutrition', 'profile', 'settings', 'sleep', 'social', 'weight'];
-
-    /**
-     * Get authorization url to begin OAuth flow
-     *
-     * @return string
-     */
-    public function getBaseAuthorizationUrl() {
-        return static::BASE_FITBIT_URL . '/oauth2/authorize';
-    }
-
-    /**
-     * Get access token url to retrieve token
-     *
-     * @param array $params
-     * @return string
-     */
-    public function getBaseAccessTokenUrl(array $params) {
-        return static::BASE_FITBIT_API_URL . '/oauth2/token';
-    }
-
-    /**
-     * Returns the url to retrieve the resource owners's profile/details.
-     *
-     * @param AccessToken $token
-     * @return string
-     */
-    public function getResourceOwnerDetailsUrl(AccessToken $token) {
-        return static::BASE_FITBIT_API_URL . '/1/user/-/profile.json';
-    }
-
-    public function setScope($scope) {
-        $this->scope = $scope;
-    }
-
-    /**
-     * Returns all scopes available from Fitbit.
-     * It is recommended you only request the scopes you need!
-     *
-     * @return array
-     */
-    protected function getDefaultScopes() {
-        return $this->scope;
-    }
-
-    /**
-     * Checks Fitbit API response for errors.
-     *
-     * @throws IdentityProviderException
-     * @param  ResponseInterface $response
-     * @param  array|string $data Parsed response data
-     * @return void
-     */
-    protected function checkResponse(ResponseInterface $response, $data) {
-        if (static::DEBUG) {
-            error_log(json_encode($response));
-            error_log(json_encode($data));
-            error_log($response->getReasonPhrase());
-        }
-        if ($response->getStatusCode() >= 400) {
-            $message = "Failed: " . $response->getStatusCode() . " " . json_encode($data);
-            throw new IdentityProviderException($message, $response->getStatusCode(), $data);
-        }
-    }
-
-    /**
-     * Returns the string used to separate scopes.
-     *
-     * @return string
-     */
-    protected function getScopeSeparator() {
-        return ' ';
-    }
-
-    /**
-     * Returns authorization parameters based on provided options.
-     * Fitbit does not use the 'approval_prompt' param and here we remove it.
-     *
-     * @param array $options
-     * @return array Authorization parameters
-     */
-    protected function getAuthorizationParameters(array $options) {
-        $params = parent::getAuthorizationParameters($options);
-        unset($params['approval_prompt']);
-        if (!empty($options['prompt'])) {
-            $params['prompt'] = $options['prompt'];
-        }
-        return $params;
-    }
-
-    /**
-     * Builds request options used for requesting an access token.
-     *
-     * @param  array $params
-     * @return array
-     */
-    protected function getAccessTokenOptions(array $params) {
-        $options = parent::getAccessTokenOptions($params);
-        $options['headers']['Authorization'] =
-            'Basic ' . base64_encode($this->clientId . ':' . $this->clientSecret);
-        return $options;
-    }
-
-    /**
-     * Generates a resource owner object from a successful resource owner
-     * details request.
-     *
-     * @param  array $response
-     * @param  AccessToken $token
-     * @return FitbitUser
-     */
-    public function createResourceOwner(array $response, AccessToken $token) {
-        return new FitbitUser($response);
-    }
-}
-
-class FitbitUser implements ResourceOwnerInterface {
-    /**
-     * @var string
-     */
-    protected $encodedId;
-
-    /**
-     * @var string
-     */
-    protected $displayName;
-
-    /**
-     * @param  array $response
-     */
-    public function __construct(array $response) {
-        $userInfo = $response['user'];
-        $this->encodedId = $userInfo['encodedId'];
-        $this->displayName = $userInfo['displayName'];
-    }
-
-    public function getId() {
-        return $this->encodedId;
-    }
-
-    /**
-     * Get the display name.
-     *
-     * @return string
-     */
-    public function getDisplayName() {
-        return $this->displayName;
-    }
-
-    /**
-     * Get user data as an array.
-     *
-     * @return array
-     */
-    public function toArray() {
-        return [
-            'encodedId' => $this->encodedId,
-            'displayName' => $this->displayName
-        ];
     }
 }
