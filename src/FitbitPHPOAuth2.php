@@ -5,7 +5,7 @@ namespace brulath\fitbit;
 use League\OAuth2\Client\Token\AccessToken;
 
 /**
- * Fitbit PHP Oauth2 v.1.0.0 Basic Fitbit API wrapper for PHP using OAuth
+ * Fitbit PHP OAuth2 v.1.0.0 Basic Fitbit API wrapper for PHP using OAuth
  * Heavily based upon https://github.com/heyitspavel/fitbitphp & https://github.com/djchen/oauth2-fitbit
  *
  * Sets a fitbit-php-oauth2-state cookie during auth flow to prevent CSRF attacks. A session must be started beforehand.
