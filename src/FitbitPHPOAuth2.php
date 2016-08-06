@@ -62,7 +62,7 @@ class FitbitPHPOauth2 {
         $this->debug = $debug;
         $this->automatically_request_token = $auto_request;
         $this->automatically_refresh_tokens = $auto_refresh;
-        $this->provider = $this->create_provider();
+        $this->provider = $this->createProvider();
     }
 
     /**
@@ -73,7 +73,7 @@ class FitbitPHPOauth2 {
      * @param $oauth1_secret string Existing valid oauth1 secret for a user
      * @returns Mixed OAuth2 json-serialized token [access_token, refresh_token, expires] for use in this library
      */
-    public function get_oauth2_token_for_oauth1_user($oauth1_token, $oauth1_secret) {
+    public function getOauth2TokenForOauth1User($oauth1_token, $oauth1_secret) {
         $refresh_token = "{$oauth1_token}:{$oauth1_secret}";
         $token = $this->provider->getAccessToken('refresh_token', ['refresh_token' => $refresh_token]);
         return $token->jsonSerialize();
@@ -84,10 +84,10 @@ class FitbitPHPOauth2 {
      * @throws FitbitException
      * @return mixed
      */
-    public function get_token() {
+    public function getToken() {
         if (empty($this->access_token)) {
             if ($this->automatically_request_token) {
-                $this->do_auth_flow();
+                $this->doAuthFlow();
             } else {
                 throw new FitbitTokenMissingException();
             }
@@ -98,11 +98,11 @@ class FitbitPHPOauth2 {
     /**
      * @param $token string JSON-serialized token
      */
-    public function set_token($token) {
+    public function setToken($token) {
         $this->access_token = new AccessToken($token);
     }
 
-    public function refresh_token() {
+    public function refreshToken() {
         if (empty($this->access_token)) {
             throw new FitbitTokenMissingException();
         }
@@ -115,7 +115,7 @@ class FitbitPHPOauth2 {
      * @return string Actual access token - does not include refresh or expiry
      * @throws FitbitTokenMissingException
      */
-    public function get_access_token() {
+    public function getAccessToken() {
         if (empty($this->access_token)) {
             throw new FitbitTokenMissingException();
         }
@@ -126,7 +126,7 @@ class FitbitPHPOauth2 {
      * @return string Actual refresh token
      * @throws FitbitTokenMissingException
      */
-    public function get_refresh_token() {
+    public function getRefreshToken() {
         if (empty($this->access_token)) {
             throw new FitbitTokenMissingException();
         }
@@ -137,7 +137,7 @@ class FitbitPHPOauth2 {
      * @return int Expiration time of token (unix epoch)
      * @throws FitbitTokenMissingException
      */
-    public function get_token_expiry() {
+    public function getTokenExpiry() {
         if (empty($this->access_token)) {
             throw new FitbitTokenMissingException();
         }
@@ -148,7 +148,7 @@ class FitbitPHPOauth2 {
      * @return FitbitUser
      * @throws FitbitTokenMissingException
      */
-    public function get_resource_owner() {
+    public function getResourceOwner() {
         if (empty($this->access_token)) {
             throw new FitbitTokenMissingException();
         }
@@ -171,7 +171,7 @@ class FitbitPHPOauth2 {
      *
      * @throws RuntimeException
      */
-    public function do_auth_flow() {
+    public function doAuthFlow() {
         if (!isset($_GET['code'])) {
             // Must call getAuthorizationUrl first in order to generate the state (mitigate CSRF attacks)
             $authorizationUrl = $this->provider->getAuthorizationUrl();
@@ -1128,7 +1128,7 @@ class FitbitPHPOauth2 {
      * Use League OAuth2
      * @return FitbitProvider
      */
-    private function create_provider() {
+    private function createProvider() {
         $provider = new FitbitProvider([
             'clientId' => $this->client_id,
             'clientSecret' => $this->client_secret,
@@ -1138,28 +1138,28 @@ class FitbitPHPOauth2 {
         return $provider;
     }
 
-    private function process_request($request) {
+    private function processRequest($request) {
         return $this->provider->getResponse($request);
     }
 
-    public function has_token_expired() {
+    public function hasTokenExpired() {
         if (empty($this->access_token)) {
             throw new \RuntimeException("No token available to check.");
         }
         return $this->access_token->hasExpired();
     }
 
-    private function get_or_refresh_token_if_missing_or_expired() {
+    private function getOrRefreshTokenIfMissingOrExpired() {
         if (empty($this->access_token)) {
             if ($this->automatically_request_token) {
-                $this->do_auth_flow();
+                $this->doAuthFlow();
             } else {
                 throw new FitbitTokenMissingException();
             }
         }
-        if ($this->has_token_expired()) {
+        if ($this->hasTokenExpired()) {
             if ($this->automatically_refresh_tokens) {
-                $this->refresh_token();
+                $this->refreshToken();
             } else {
                 throw new FitbitTokenExpiredException();
             }
@@ -1167,16 +1167,16 @@ class FitbitPHPOauth2 {
     }
 
     private function get($path, $query = null) {
-        $this->get_or_refresh_token_if_missing_or_expired();
+        $this->getOrRefreshTokenIfMissingOrExpired();
 
         $path = static::API_URL . $path . '.json' . (!empty($query) ? http_build_query($query) : "");
         $this->debug("GET: {$path}");
         $request = $this->provider->getAuthenticatedRequest('GET', $path, $this->access_token);
-        return $this->process_request($request);
+        return $this->processRequest($request);
     }
 
     private function post($path, $parameters = null, $query = null, $headers = []) {
-        $this->get_or_refresh_token_if_missing_or_expired();
+        $this->getOrRefreshTokenIfMissingOrExpired();
 
         $query_string = !empty($query) ? http_build_query($query) : "";
         $form_string = !empty($parameters) ? http_build_query($parameters) : "";
@@ -1186,7 +1186,7 @@ class FitbitPHPOauth2 {
         $path = static::API_URL . $path . '.json' . $query_string;
         $this->debug("POST: {$path}");
         $request = $this->provider->getAuthenticatedRequest('POST', $path, $this->access_token, $params);
-        return $this->process_request($request);
+        return $this->processRequest($request);
     }
 
     private function create($path, $parameters = null, $query = null) {
@@ -1202,7 +1202,7 @@ class FitbitPHPOauth2 {
     }
 
     private function delete($path, $parameters = null, $query = null) {
-        $this->get_or_refresh_token_if_missing_or_expired();
+        $this->getOrRefreshTokenIfMissingOrExpired();
 
         $query_string = !empty($query) ? http_build_query($query) : "";
         $form_string = !empty($parameters) ? http_build_query($parameters) : "";
@@ -1212,7 +1212,7 @@ class FitbitPHPOauth2 {
         $path = static::API_URL . $path . '.json' . $query_string;
         $this->debug("DELETE: {$path}");
         $request = $this->provider->getAuthenticatedRequest('DELETE', $path, $this->access_token, $params);
-        return $this->process_request($request);
+        return $this->processRequest($request);
     }
 
     private function debug($msg) {
