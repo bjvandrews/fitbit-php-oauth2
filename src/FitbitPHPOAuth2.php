@@ -15,7 +15,7 @@ use League\OAuth2\Client\Token\AccessToken;
  * @version 1.0.0 ($Id$)
  * @license http://opensource.org/licenses/MIT MIT
  */
-class FitbitPHPOauth2 {
+class FitbitPHPOAuth2 {
     const API_URL = 'https://api.fitbit.com/1/';
 
     /**

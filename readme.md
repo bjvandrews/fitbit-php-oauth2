@@ -26,7 +26,7 @@ I'm lazy, so I've made this library automatically refresh oauth details whenever
 
 ```php
 try {
-    $fitbit = new brulath\fitbit\FitbitPHPOauth2(
+    $fitbit = new brulath\fitbit\FitbitPHPOAuth2(
         'your_client_id',
         'your_client_secret',
         'your_post_authorization_redirect_url',
@@ -37,7 +37,7 @@ try {
     // A session is required to prevent CSRF
     session_start();
     
-    $access_token = $fitbit->get_token();  // will redirect user to fitbit. the cookie it sets must survive.
+    $access_token = $fitbit->getToken();  // will redirect user to fitbit. the cookie it sets must survive.
     
     storeAccessTokenAsJsonInMyDatabase($access_token);
 } catch (\Exception $e) {
@@ -49,7 +49,7 @@ try {
 ```php
 
 try {
-    $fitbit = new brulath\fitbit\FitbitPHPOauth2(
+    $fitbit = new brulath\fitbit\FitbitPHPOAuth2(
         'your_client_id',
         'your_client_secret',
         'your_post_authorization_redirect_url',
@@ -58,7 +58,7 @@ try {
     );
     
     // If token has expired, the first request you make will additionally make a refresh request
-    $fitbit->set_token(getAccessTokenJsonFromMyDatabase());
+    $fitbit->setToken(getAccessTokenJsonFromMyDatabase());
 } catch (\Exception $e) {
     print($e);
 }
@@ -66,11 +66,11 @@ try {
 
 ### Making a request
 
-Inspect the FitbitPHPOauth2 class to find the appropriate method. In this case, I want all activities on a date:
+Inspect the FitbitPHPOAuth2 class to find the appropriate method. In this case, I want all activities on a date:
 ```php
 
 try {
-    $fitbit = new brulath\fitbit\FitbitPHPOauth2(
+    $fitbit = new brulath\fitbit\FitbitPHPOAuth2(
         'your_client_id',
         'your_client_secret',
         'your_post_authorization_redirect_url',
@@ -80,7 +80,7 @@ try {
     $fitbit->set_token(getAccessTokenJsonFromMyDatabase());
     
     $activities = $fitbit->getActivities('2016-02-20');
-    storeAccessTokenIfItChanged($fitbit->get_token());
+    storeAccessTokenIfItChanged($fitbit->getToken());
     print_r($activities);
 } catch (\Exception $e) {
     print($e);
