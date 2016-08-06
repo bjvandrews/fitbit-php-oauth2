@@ -73,7 +73,7 @@ class FitbitPHPOauth2 {
      * @param $oauth1_secret string Existing valid oauth1 secret for a user
      * @returns Mixed OAuth2 json-serialized token [access_token, refresh_token, expires] for use in this library
      */
-    public function getOauth2TokenForOauth1User($oauth1_token, $oauth1_secret) {
+    public function getOAuth2TokenForOAuth1User($oauth1_token, $oauth1_secret) {
         $refresh_token = "{$oauth1_token}:{$oauth1_secret}";
         $token = $this->provider->getAccessToken('refresh_token', ['refresh_token' => $refresh_token]);
         return $token->jsonSerialize();
@@ -169,7 +169,7 @@ class FitbitPHPOauth2 {
      * Upon completion of the auth flow you will either receive an exception (states don't match) or will be able to
      * retrieve the token using get_token()
      *
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     public function doAuthFlow() {
         if (!isset($_GET['code'])) {
@@ -793,7 +793,7 @@ class FitbitPHPOauth2 {
      * @param string $type
      * @param  $base_date string Y-m-d or 'today', to_period
      * @param  $to_period string Y-m-d or '1d, 7d, 30d, 1w, 1m, 3m, 6m, 1y, max'
-     * @return array
+     * @return array | bool
      */
     public function getTimeSeries($type, $base_date, $to_period) {
 
@@ -916,7 +916,7 @@ class FitbitPHPOauth2 {
      * @param  $date string Y-m-d or 'today'
      * @param  $start_time string Y-m-d
      * @param  $end_time string Y-m-d
-     * @return object
+     * @return object | bool
      */
     public function getIntradayTimeSeries($type, $date, $start_time = null, $end_time = null) {
         switch ($type) {
