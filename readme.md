@@ -26,7 +26,7 @@ I'm lazy, so I've made this library automatically refresh oauth details whenever
 
 ```php
 try {
-    $fitbit = new brulath\fitbit\FitBitPHPOauth2(
+    $fitbit = new brulath\fitbit\FitbitPHPOauth2(
         'your_client_id',
         'your_client_secret',
         'your_post_authorization_redirect_url',
@@ -49,7 +49,7 @@ try {
 ```php
 
 try {
-    $fitbit = new brulath\fitbit\FitBitPHPOauth2(
+    $fitbit = new brulath\fitbit\FitbitPHPOauth2(
         'your_client_id',
         'your_client_secret',
         'your_post_authorization_redirect_url',
@@ -66,11 +66,11 @@ try {
 
 ### Making a request
 
-Inspect the FitBitPHPOauth2 class to find the appropriate method. In this case, I want all activities on a date:
+Inspect the FitbitPHPOauth2 class to find the appropriate method. In this case, I want all activities on a date:
 ```php
 
 try {
-    $fitbit = new brulath\fitbit\FitBitPHPOauth2(
+    $fitbit = new brulath\fitbit\FitbitPHPOauth2(
         'your_client_id',
         'your_client_secret',
         'your_post_authorization_redirect_url',
