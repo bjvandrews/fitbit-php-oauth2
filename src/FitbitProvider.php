@@ -7,14 +7,16 @@ use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
 use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\NullLogger;
+use Psr\Log\LoggerInterface;
 
 /**
  * Copied here to fix error in checkResponse, otherwise identical to https://github.com/djchen/oauth2-fitbit
  */
-class FitbitProvider extends AbstractProvider
+class FitbitProvider extends AbstractProvider implements LoggerAwareInterface
 {
     use BearerAuthorizationTrait;
-    const DEBUG = false;
 
     /**
      * Fitbit URL.
@@ -30,7 +32,13 @@ class FitbitProvider extends AbstractProvider
      */
     const BASE_FITBIT_API_URL = 'https://api.fitbit.com';
 
+
     protected $scope = ['activity', 'heartrate', 'location', 'nutrition', 'profile', 'settings', 'sleep', 'social', 'weight'];
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
 
     /**
      * Get authorization url to begin OAuth flow
@@ -83,12 +91,15 @@ class FitbitProvider extends AbstractProvider
      * @param  array|string $data Parsed response data
      * @return void
      */
-    protected function checkResponse(ResponseInterface $response, $data) {
-        if (static::DEBUG) {
-            error_log(json_encode($response));
-            error_log(json_encode($data));
-            error_log($response->getReasonPhrase());
-        }
+    protected function checkResponse(ResponseInterface $response, $data)
+    {
+        $logger = $this->getLogger();
+        $logger->debug('checkResponse', [
+            'response' => $response,
+            'data' => $data,
+            'reason' => $response->getReasonPhrase()
+        ]);
+
         if ($response->getStatusCode() >= 400) {
             $message = "Failed: " . $response->getStatusCode() . " " . json_encode($data);
             throw new IdentityProviderException($message, $response->getStatusCode(), $data);
@@ -143,5 +154,18 @@ class FitbitProvider extends AbstractProvider
      */
     public function createResourceOwner(array $response, AccessToken $token) {
         return new FitbitUser($response);
+    }
+
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
+
+    private function getLogger()
+    {
+        if (!isset($this->logger)) {
+            $this->logger = new NullLogger();
+        }
+        return $this->logger;
     }
 }
