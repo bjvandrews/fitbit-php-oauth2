@@ -2,6 +2,7 @@
 
 namespace brulath\fitbit;
 
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
 use Sabre\Event\EventEmitterInterface;
 use Sabre\Event\EventEmitterTrait;
@@ -1145,8 +1146,32 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
         return $provider;
     }
 
+    /**
+     * Attempts to make the request. If it fails for an expired token, it'll try to refresh
+     * and then try the request again.
+     * @param $request
+     * @return mixed
+     * @throws IdentityProviderException
+     */
     private function processRequest($request) {
-        return $this->provider->getResponse($request);
+        try {
+            return $this->provider->getResponse($request);
+        } catch (IdentityProviderException $e) {
+            if (!$this->automatically_refresh_tokens) {
+                throw $e;
+            }
+
+            $body = $e->getResponseBody();
+            if (isset($body['errors'])) {
+                foreach($body['errors'] as $error) {
+                    if (isset($error['errorType']) && $error['errorType'] == 'expired_token') {
+                        $this->refreshToken();
+                        return $this->provider->getResponse($request);
+                    }
+                }
+            }
+            throw $e;
+        }
     }
 
     public function hasTokenExpired() {
