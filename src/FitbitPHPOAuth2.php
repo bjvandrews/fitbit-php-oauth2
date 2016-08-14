@@ -108,6 +108,10 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
         $this->access_token = new AccessToken($token);
     }
 
+    /**
+     * @event Sabre\Event refresh-token Fires on new token received - you need to capture this
+     * @throws FitbitTokenMissingException
+     */
     public function refreshToken() {
         if (empty($this->access_token)) {
             throw new FitbitTokenMissingException();
@@ -163,7 +167,37 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
     }
 
     /**
+     * Redirect the user to the described URL in order to have them authorize your application.
+     * When they return, verify that the query parameter "state" is equal to the state variable returned here
+     * If they don't match, this might be an invalid session and you should make them do the auth flow again
+     *
+     * @return array URL to direct the user to and state variable to check upon their return
+     */
+    public function getAuthUrlAndState() {
+        return [
+            // Note: do not use provider->authorize() - it will generate a new state that we cannot capture and check
+            'url' => $this->provider->getAuthorizationUrl(),
+            'state' => $this->provider->getState(),
+        ];
+    }
+
+    /**
+     * Process the successful return of the user - pass the $_GET['code'] (or equiv) in to extract the access token
+     * @event Sabre\Event obtain-token Fires on token received - you need to capture this
+     * @param $code $_GET['code'] from user return
+     */
+    public function handleAuthResponse($code) {
+        $this->access_token = $this->provider->getAccessToken('authorization_code', ['code' => $code]);
+        $this->emit('obtain-token', [ $this->access_token ]);
+    }
+
+    /**
      * Perform the OAuth2 flow to acquire a valid Fitbit API token for the current user
+     *
+     * If you would rather handle this yourself, call getAuthUrlAndState() and send the user to the specified URL,
+     * verifying that the state acquired matches the query string state when they return. Call
+     * handleAuthResponse($_GET['code']) to store the access token and emit it as a obtain-token Sabre\Event
+     *
      * This function requires:
      *      the user to be accessing the current page using a web browser
      *      the user & server have cookies enabled and can set 'fitbit-php-oauth2-state' cookie successfully
@@ -174,25 +208,23 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
      * again when they arrive in order to obtain the state and code $_GET parameters.
      *
      * Upon completion of the auth flow you will either receive an exception (states don't match) or will be able to
-     * retrieve the token using get_token()
+     * retrieve the token using get_token() (it'll also be emitted as a Sabre\Event 'obtain-token')
      *
      * @throws \RuntimeException
      */
     public function doAuthFlow() {
         if (!isset($_GET['code'])) {
             // Must call getAuthorizationUrl first in order to generate the state (mitigate CSRF attacks)
-            $authorizationUrl = $this->provider->getAuthorizationUrl();
-            $_SESSION['fitbit-php-oauth2-state'] = $this->provider->getState();
-            // Note: do not use provider->authorize() - it will generate a new state that we cannot capture and check
-            header('Location: ' . $authorizationUrl);
+            $auth = $this->getAuthUrlAndState();
+            $_SESSION['fitbit-php-oauth2-state'] = $auth['state'];
+            header('Location: ' . $auth['url']);
             exit;
         } elseif (empty($_GET['state']) || ($_GET['state'] !== $_SESSION['fitbit-php-oauth2-state'])) {
             unset($_SESSION['fitbit-php-oauth2-state']);
             throw new \RuntimeException("Invalid state");
         } else {
             unset($_SESSION['fitbit-php-oauth2-state']);
-            $this->access_token = $this->provider->getAccessToken('authorization_code', ['code' => $_GET['code']]);
-            $this->emit('obtain-token', [ $this->access_token ]);
+            $this->handleAuthResponse($_GET['code']);
         }
     }
 
