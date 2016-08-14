@@ -2,7 +2,10 @@
 
 namespace brulath\fitbit;
 
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
+use Sabre\Event\EventEmitterInterface;
+use Sabre\Event\EventEmitterTrait;
 
 /**
  * Fitbit PHP OAuth2 v.2.0.1 Basic Fitbit API wrapper for PHP using OAuth
@@ -15,7 +18,10 @@ use League\OAuth2\Client\Token\AccessToken;
  * @version 2.0.1 ($Id$)
  * @license http://opensource.org/licenses/MIT MIT
  */
-class FitbitPHPOAuth2 {
+class FitbitPHPOAuth2 implements EventEmitterInterface {
+
+    use EventEmitterTrait;
+
     const API_URL = 'https://api.fitbit.com/1/';
 
     /**
@@ -108,6 +114,7 @@ class FitbitPHPOAuth2 {
         }
         $refresh_token = $this->access_token->getRefreshToken();
         $this->access_token = $this->provider->getAccessToken('refresh_token', ['refresh_token' => $refresh_token]);
+        $this->emit('refresh-token', [ $this->access_token ]);
         $this->debug("Received new access_token: " . print_r($this->access_token, true));
     }
 
@@ -185,6 +192,7 @@ class FitbitPHPOAuth2 {
         } else {
             unset($_SESSION['fitbit-php-oauth2-state']);
             $this->access_token = $this->provider->getAccessToken('authorization_code', ['code' => $_GET['code']]);
+            $this->emit('obtain-token', [ $this->access_token ]);
         }
     }
 
@@ -1138,8 +1146,32 @@ class FitbitPHPOAuth2 {
         return $provider;
     }
 
+    /**
+     * Attempts to make the request. If it fails for an expired token, it'll try to refresh
+     * and then try the request again.
+     * @param $request
+     * @return mixed
+     * @throws IdentityProviderException
+     */
     private function processRequest($request) {
-        return $this->provider->getResponse($request);
+        try {
+            return $this->provider->getResponse($request);
+        } catch (IdentityProviderException $e) {
+            if (!$this->automatically_refresh_tokens) {
+                throw $e;
+            }
+
+            $body = $e->getResponseBody();
+            if (isset($body['errors'])) {
+                foreach($body['errors'] as $error) {
+                    if (isset($error['errorType']) && $error['errorType'] == 'expired_token') {
+                        $this->refreshToken();
+                        return $this->provider->getResponse($request);
+                    }
+                }
+            }
+            throw $e;
+        }
     }
 
     public function hasTokenExpired() {
