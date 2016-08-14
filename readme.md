@@ -79,13 +79,6 @@ to use here; you will need to re-authorize the user if you want to expand your s
 If you're lazy (hi!) you can have the library redirect the user to the Fitbit website for you.
 
 ```php
-$fitbit = new brulath\fitbit\FitbitPHPOAuth2([
-    'client_id' => 'your_client_id',
-    'client_secret' => 'your_client_secret',
-    'redirect_uri' => 'your_post_authorization_redirect_uri',  // must match URI specified in your app on the Fitbit Developer website
-    'scope' => ['activity', 'heartrate', 'location', 'nutrition', 'profile', 'settings', 'sleep', 'social', 'weight'], // desired scopes
-]);
-
 // A session is required to prevent CSRF
 session_start();
 
