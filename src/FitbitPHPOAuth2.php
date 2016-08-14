@@ -6,19 +6,26 @@ use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
 use Sabre\Event\EventEmitterInterface;
 use Sabre\Event\EventEmitterTrait;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\NullLogger;
+use Psr\Log\LoggerInterface;
+
+use brulath\fitbit\Exception\FitbitException;
+use brulath\fitbit\Exception\FitbitTokenExpiredException;
+use brulath\fitbit\Exception\FitbitTokenMissingException;
 
 /**
- * Fitbit PHP OAuth2 v.2.0.1 Basic Fitbit API wrapper for PHP using OAuth
+ * Fitbit PHP OAuth2 Basic Fitbit API wrapper for PHP using OAuth
  * Heavily based upon https://github.com/heyitspavel/fitbitphp & https://github.com/djchen/oauth2-fitbit
  *
  * Sets a fitbit-php-oauth2-state cookie during auth flow to prevent CSRF attacks. A session must be started beforehand.
  *
- * Date: 2015/02/26
+ * Date: 2016/08/14
  * Requires https://github.com/thephpleague/oauth2-client
- * @version 2.0.1 ($Id$)
+ * @version 3.0.0 ($Id$)
  * @license http://opensource.org/licenses/MIT MIT
  */
-class FitbitPHPOAuth2 implements EventEmitterInterface {
+class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
 
     use EventEmitterTrait;
 
@@ -49,26 +56,46 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
      */
     protected $access_token;
 
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
     protected $metric = true;
-    protected $user_agent = 'FitbitPHPOAuth2 2.0.1';
+    protected $user_agent = 'FitbitPHPOAuth2 3.0.0';
     protected $scope = ['activity', 'heartrate', 'location', 'profile', 'settings', 'sleep', 'social', 'weight'];
 
     protected $debug = false;
     protected $automatically_request_token = true;
     protected $automatically_refresh_tokens = true;
 
-    public function __construct($client_id, $client_secret, $redirect_uri, $scope, $debug = false,
-                                $auto_request = true,  $auto_refresh = true) {
-        $this->client_id = $client_id;
-        $this->client_secret = $client_secret;
-        $this->redirect_uri = $redirect_uri;
-        if (!empty($scope)) {
-            $this->scope = $scope;
+    /**
+     * FitbitPHPOAuth2 constructor.
+     * @param array $options [ * = required
+     *    * 'client_id' string Fitbit client id for your application
+     *    * 'client_secret' string Fitbit client secret for your application
+     *    * 'redirect_uri' string Fitbit redirect URI - must match URI for your application
+     *      'scope' array Array of string scopes to request
+     *      'logger' LoggerInterface A logger
+     *      'auto_request' bool Automatically request auth details if none are set (redirects to Fitbit website)
+     *      'auto_refresh' bool Automatically refresh tokens if they expire (emits event)
+     * ]
+     */
+    public function __construct(array $options = []) {
+        $this->client_id = $options['client_id'];
+        $this->client_secret = $options['client_secret'];
+        $this->redirect_uri = $options['redirect_uri'];
+        $this->automatically_request_token = !empty($options['auto_request']) && $options['auto_request'];
+        $this->automatically_refresh_tokens = !empty($options['auto_refresh']) && $options['auto_refresh'];
+        if (!empty($options['scope'])) {
+            $this->scope = $options['scope'];
         }
-        $this->debug = $debug;
-        $this->automatically_request_token = $auto_request;
-        $this->automatically_refresh_tokens = $auto_refresh;
+        if (empty($options['logger'])) {
+            $options['logger'] = new NullLogger();
+        }
+        $this->setLogger($options['logger']);
         $this->provider = $this->createProvider();
+        $this->provider->setLogger($this->logger);
     }
 
     /**
@@ -82,13 +109,14 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
     public function getOAuth2TokenForOAuth1User($oauth1_token, $oauth1_secret) {
         $refresh_token = "{$oauth1_token}:{$oauth1_secret}";
         $token = $this->provider->getAccessToken('refresh_token', ['refresh_token' => $refresh_token]);
+        $this->emit('obtain-token', [ $token ]);
         return $token->jsonSerialize();
     }
 
     /**
      * Get JSON-serialised token
-     * @throws FitbitException
      * @return mixed
+     * @throws FitbitTokenMissingException
      */
     public function getToken() {
         if (empty($this->access_token)) {
@@ -119,7 +147,6 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
         $refresh_token = $this->access_token->getRefreshToken();
         $this->access_token = $this->provider->getAccessToken('refresh_token', ['refresh_token' => $refresh_token]);
         $this->emit('refresh-token', [ $this->access_token ]);
-        $this->debug("Received new access_token: " . print_r($this->access_token, true));
     }
 
     /**
@@ -176,7 +203,7 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
     public function getAuthUrlAndState() {
         return [
             // Note: do not use provider->authorize() - it will generate a new state that we cannot capture and check
-            'url' => $this->provider->getAuthorizationUrl(),
+            'uri' => $this->provider->getAuthorizationUrl(),
             'state' => $this->provider->getState(),
         ];
     }
@@ -217,13 +244,15 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
             // Must call getAuthorizationUrl first in order to generate the state (mitigate CSRF attacks)
             $auth = $this->getAuthUrlAndState();
             $_SESSION['fitbit-php-oauth2-state'] = $auth['state'];
-            header('Location: ' . $auth['url']);
+            $this->getLogger()->debug('auth_flow', ['stage' => 1, 'auth' => $auth]);
+            header('Location: ' . $auth['uri']);
             exit;
         } elseif (empty($_GET['state']) || ($_GET['state'] !== $_SESSION['fitbit-php-oauth2-state'])) {
             unset($_SESSION['fitbit-php-oauth2-state']);
             throw new \RuntimeException("Invalid state");
         } else {
             unset($_SESSION['fitbit-php-oauth2-state']);
+            $this->getLogger()->debug('auth_flow', ['stage' => 2]);
             $this->handleAuthResponse($_GET['code']);
         }
     }
@@ -1109,7 +1138,7 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
         if (!empty($subscriptions) && !empty($subscriptions['apiSubscriptions'])) {
             foreach ($subscriptions['apiSubscriptions'] as &$subscription) {
                 $this->deleteSubscription($subscription['subscriptionId']);
-                $this->debug("Deleted subscription {$subscription['subscriptionId']}");
+                $this->getLogger()->debug('subscription', ['type' => 'delete', 'id' => $subscription['subscriptionId']]);
             }
         }
     }
@@ -1175,6 +1204,7 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
             'redirectUri' => $this->redirect_uri,
         ]);
         $provider->setScope($this->scope);
+        $this->getLogger()->debug('provider', ['redirectUri' => $this->redirect_uri, 'scope' => $this->scope]);
         return $provider;
     }
 
@@ -1189,30 +1219,54 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
         try {
             return $this->provider->getResponse($request);
         } catch (IdentityProviderException $e) {
-            if (!$this->automatically_refresh_tokens) {
+            if ($this->handleRequestError($e)) {
+                return $this->provider->getResponse($request);
+            } else {
                 throw $e;
             }
-
-            $body = $e->getResponseBody();
-            if (isset($body['errors'])) {
-                foreach($body['errors'] as $error) {
-                    if (isset($error['errorType']) && $error['errorType'] == 'expired_token') {
-                        $this->refreshToken();
-                        return $this->provider->getResponse($request);
-                    }
-                }
-            }
-            throw $e;
         }
     }
 
+    /**
+     * Attempt to gracefully resolve an error condition
+     *
+     * @param IdentityProviderException $exception
+     * @throws IdentityProviderException
+     * @throws FitbitException
+     */
+    private function handleRequestError(IdentityProviderException $exception) {
+        $body = $exception->getResponseBody();
+        if (empty($body['errors'])) {
+            throw $exception;  // no idea
+        }
+        $code = $exception->getCode();
+        $success = $body['success'];
+
+        // We can recover from an expired token (if permitted)
+        if (($code == 401) && (count($body['errors']) === 1) && ($body['errors'][0]['errorType'] == 'expired_token')
+            && $this->automatically_refresh_tokens) {
+            $this->getLogger()->debug('error_recovery', ['type' => 'expired_token']);
+            return $this->refreshToken();
+        } else {  // some other error - wrap it so getMessage contains the error
+            throw new FitbitException($code, $success, $body['errors']);
+        }
+    }
+
+    /**
+     * @return bool
+     * @throws FitbitTokenMissingException
+     */
     public function hasTokenExpired() {
         if (empty($this->access_token)) {
-            throw new \RuntimeException("No token available to check.");
+            throw new FitbitTokenMissingException();
         }
         return $this->access_token->hasExpired();
     }
 
+    /**
+     * @throws FitbitTokenMissingException
+     * @throws FitbitTokenExpiredException
+     */
     private function getOrRefreshTokenIfMissingOrExpired() {
         if (empty($this->access_token)) {
             if ($this->automatically_request_token) {
@@ -1234,7 +1288,7 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
         $this->getOrRefreshTokenIfMissingOrExpired();
 
         $path = static::API_URL . $path . '.json' . (!empty($query) ? http_build_query($query) : "");
-        $this->debug("GET: {$path}");
+        $this->getLogger()->debug('request', ['type' => 'get', 'path' => $path]);
         $request = $this->provider->getAuthenticatedRequest('GET', $path, $this->access_token);
         return $this->processRequest($request);
     }
@@ -1248,7 +1302,7 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
         $params = ['headers' => $headers, 'body' => $form_string];
 
         $path = static::API_URL . $path . '.json' . $query_string;
-        $this->debug("POST: {$path}");
+        $this->getLogger()->debug('request', ['type' => 'post', 'path' => $path]);
         $request = $this->provider->getAuthenticatedRequest('POST', $path, $this->access_token, $params);
         return $this->processRequest($request);
     }
@@ -1274,14 +1328,19 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
         $params = ['headers' => $headers, 'body' => $form_string];
 
         $path = static::API_URL . $path . '.json' . $query_string;
-        $this->debug("DELETE: {$path}");
+        $this->getLogger()->debug('request', ['type' => 'delete', 'path' => $path]);
         $request = $this->provider->getAuthenticatedRequest('DELETE', $path, $this->access_token, $params);
         return $this->processRequest($request);
     }
 
-    private function debug($msg) {
-        if ($this->debug) {
-            error_log(json_encode($msg));
+    public function setLogger(LoggerInterface $logger) {
+        $this->logger = $logger;
+    }
+
+    private function getLogger() {
+        if (!isset($this->logger)) {
+            $this->logger = new NullLogger();
         }
+        return $this->logger;
     }
 }
