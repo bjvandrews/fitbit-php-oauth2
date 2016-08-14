@@ -1088,7 +1088,7 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
      */
     public function addSubscription($id, $path = null, $subscriberId = null, $delete_existing_subscriptions = false) {
         if ($delete_existing_subscriptions) {
-            $this->delete_existing_subscriptions();
+            $this->deleteExistingSubscriptions();
         }
         $userHeaders = array();
         if ($subscriberId) {
@@ -1104,7 +1104,7 @@ class FitbitPHPOAuth2 implements EventEmitterInterface {
      * subscriptions are deleted before resubscribing; you'll get 409 conflict exceptions if the user is already
      * subscribed to your client_id.
      */
-    private function delete_existing_subscriptions() {
+    private function deleteExistingSubscriptions() {
         $subscriptions = $this->getSubscriptions();
         if (!empty($subscriptions) && !empty($subscriptions['apiSubscriptions'])) {
             foreach ($subscriptions['apiSubscriptions'] as &$subscription) {
