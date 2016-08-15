@@ -1210,53 +1210,6 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
     }
 
     /**
-     * Attempts to make the request. If it fails for an expired token, it'll try to refresh
-     * and then try the request again.
-     * @param $request
-     * @return mixed
-     * @throws IdentityProviderException
-     */
-    private function processRequest($request) {
-        try {
-            return $this->provider->getResponse($request);
-        } catch (IdentityProviderException $e) {
-            if ($this->handleRequestError($e)) {
-                return $this->provider->getResponse($request);
-            } else {
-                throw $e;
-            }
-        }
-    }
-
-    /**
-     * Attempt to gracefully resolve an error condition
-     *
-     * @param IdentityProviderException $exception
-     * @return bool Completed a refresh request
-     * @throws IdentityProviderException
-     * @throws FitbitException
-     */
-    private function handleRequestError(IdentityProviderException $exception) {
-        $body = $exception->getResponseBody();
-        if (empty($body['errors'])) {
-            throw $exception;  // no idea
-        }
-        $code = $exception->getCode();
-        $success = $body['success'];
-
-        /* TODO: Refactor so the new access token can be inserted into the request
-        // We can recover from an expired token (if permitted)
-        if (($code == 401) && (count($body['errors']) === 1) && ($body['errors'][0]['errorType'] == 'expired_token')
-            && $this->automatically_refresh_tokens) {
-            $this->getLogger()->debug('error_recovery', ['type' => 'expired_token']);
-            return $this->refreshToken();
-        } else {  // some other error - wrap it so getMessage contains the error
-            throw new FitbitException($code, $success, $body['errors']);
-        }*/
-        throw new FitbitException($code, $success, $body['errors']);
-    }
-
-    /**
      * @return bool
      * @throws FitbitTokenMissingException
      */
@@ -1288,17 +1241,37 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
         }
     }
 
-    private function get($path, $query = null) {
-        $this->getOrRefreshTokenIfMissingOrExpired();
+    /**
+     * Attempts to make the request. If it fails for an expired token, it'll try to refresh
+     * and then try the request again.
+     * @param $method string HTTP Method
+     * @param $path string URI
+     * @param $params array query string
+     * @return mixed
+     * @throws FitbitException
+     * @internal param $request
+     */
+    private function makeAuthenticatedHttpRequest($method, $path, $params=[]) {
+        try {
+            $this->getOrRefreshTokenIfMissingOrExpired();
+            $request = $this->provider->getAuthenticatedRequest($method, $path, $this->access_token, $params);
+            return $this->provider->getResponse($request);
 
+        } catch (IdentityProviderException $e) {
+            $body = $e->getResponseBody();
+            $code = $e->getCode();
+            $success = $body['success'];
+            throw new FitbitException($code, $success, $body['errors']);
+        }
+    }
+
+    private function get($path, $query = null) {
         $path = static::API_URL . $path . '.json' . (!empty($query) ? http_build_query($query) : "");
         $this->getLogger()->debug('request', ['type' => 'get', 'path' => $path]);
-        $request = $this->provider->getAuthenticatedRequest('GET', $path, $this->access_token);
-        return $this->processRequest($request);
+        return $this->makeAuthenticatedHttpRequest('GET', $path);
     }
 
     private function post($path, $parameters = null, $query = null, $headers = []) {
-        $this->getOrRefreshTokenIfMissingOrExpired();
 
         $query_string = !empty($query) ? http_build_query($query) : "";
         $form_string = !empty($parameters) ? http_build_query($parameters) : "";
@@ -1307,8 +1280,7 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
 
         $path = static::API_URL . $path . '.json' . $query_string;
         $this->getLogger()->debug('request', ['type' => 'post', 'path' => $path]);
-        $request = $this->provider->getAuthenticatedRequest('POST', $path, $this->access_token, $params);
-        return $this->processRequest($request);
+        return $this->makeAuthenticatedHttpRequest('POST', $path, $params);
     }
 
     private function create($path, $parameters = null, $query = null) {
@@ -1324,8 +1296,6 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
     }
 
     private function delete($path, $parameters = null, $query = null) {
-        $this->getOrRefreshTokenIfMissingOrExpired();
-
         $query_string = !empty($query) ? http_build_query($query) : "";
         $form_string = !empty($parameters) ? http_build_query($parameters) : "";
         $headers['content-type'] = 'application/x-www-form-urlencoded';
@@ -1333,8 +1303,7 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
 
         $path = static::API_URL . $path . '.json' . $query_string;
         $this->getLogger()->debug('request', ['type' => 'delete', 'path' => $path]);
-        $request = $this->provider->getAuthenticatedRequest('DELETE', $path, $this->access_token, $params);
-        return $this->processRequest($request);
+        return $this->makeAuthenticatedHttpRequest('DELETE', $path, $params);
     }
 
     public function setLogger(LoggerInterface $logger) {
