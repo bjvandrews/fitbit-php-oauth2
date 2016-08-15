@@ -1244,6 +1244,7 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
         $code = $exception->getCode();
         $success = $body['success'];
 
+        /* TODO: Refactor so the new access token can be inserted into the request
         // We can recover from an expired token (if permitted)
         if (($code == 401) && (count($body['errors']) === 1) && ($body['errors'][0]['errorType'] == 'expired_token')
             && $this->automatically_refresh_tokens) {
@@ -1251,7 +1252,8 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
             return $this->refreshToken();
         } else {  // some other error - wrap it so getMessage contains the error
             throw new FitbitException($code, $success, $body['errors']);
-        }
+        }*/
+        throw new FitbitException($code, $success, $body['errors']);
     }
 
     /**
