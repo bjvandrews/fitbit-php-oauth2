@@ -1246,15 +1246,18 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
      * and then try the request again.
      * @param $method string HTTP Method
      * @param $path string URI
+     * @param $query_string string Query to append to uri
      * @param $params array query string
      * @return mixed
      * @throws FitbitException
      * @internal param $request
      */
-    private function makeAuthenticatedHttpRequest($method, $path, $params=[]) {
+    private function makeAuthenticatedHttpRequest($method, $path, $query_string, $params=[]) {
         try {
             $this->getOrRefreshTokenIfMissingOrExpired();
+            $path = static::API_URL . $path . '.json' . $query_string;
             $request = $this->provider->getAuthenticatedRequest($method, $path, $this->access_token, $params);
+            $this->getLogger()->debug('request', ['type' => $method, 'path' => $path, 'params' => $params]);
             return $this->provider->getResponse($request);
 
         } catch (IdentityProviderException $e) {
@@ -1266,25 +1269,20 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
     }
 
     private function get($path, $query = null) {
-        $path = static::API_URL . $path . '.json' . (!empty($query) ? http_build_query($query) : "");
-        $this->getLogger()->debug('request', ['type' => 'get', 'path' => $path]);
-        return $this->makeAuthenticatedHttpRequest('GET', $path);
+        $query_string = (!empty($query) ? http_build_query($query) : "");
+        return $this->makeAuthenticatedHttpRequest('GET', $path, $query_string);
     }
 
-    private function post($path, $parameters = null, $query = null, $headers = []) {
-
+    private function post($method, $path, $parameters = null, $query = null, $headers = []) {
         $query_string = !empty($query) ? http_build_query($query) : "";
         $form_string = !empty($parameters) ? http_build_query($parameters) : "";
         $headers['content-type'] = 'application/x-www-form-urlencoded';
         $params = ['headers' => $headers, 'body' => $form_string];
-
-        $path = static::API_URL . $path . '.json' . $query_string;
-        $this->getLogger()->debug('request', ['type' => 'post', 'path' => $path]);
-        return $this->makeAuthenticatedHttpRequest('POST', $path, $params);
+        return $this->makeAuthenticatedHttpRequest($method, $path, $query_string, $params);
     }
 
     private function create($path, $parameters = null, $query = null) {
-        return $this->post($path, $parameters, $query);
+        return $this->post('POST', $path, $parameters, $query);
     }
 
     private function read($path, $query = null) {
@@ -1292,18 +1290,11 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
     }
 
     private function update($path, $parameters = null, $query = null) {
-        return $this->post($path, $parameters, $query);
+        return $this->post('POST', $path, $parameters, $query);
     }
 
     private function delete($path, $parameters = null, $query = null) {
-        $query_string = !empty($query) ? http_build_query($query) : "";
-        $form_string = !empty($parameters) ? http_build_query($parameters) : "";
-        $headers['content-type'] = 'application/x-www-form-urlencoded';
-        $params = ['headers' => $headers, 'body' => $form_string];
-
-        $path = static::API_URL . $path . '.json' . $query_string;
-        $this->getLogger()->debug('request', ['type' => 'delete', 'path' => $path]);
-        return $this->makeAuthenticatedHttpRequest('DELETE', $path, $params);
+        return $this->post('DELETE', $path, $parameters, $query);
     }
 
     public function setLogger(LoggerInterface $logger) {
