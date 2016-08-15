@@ -147,6 +147,7 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
         $refresh_token = $this->access_token->getRefreshToken();
         $this->access_token = $this->provider->getAccessToken('refresh_token', ['refresh_token' => $refresh_token]);
         $this->emit('refresh-token', [ $this->access_token ]);
+        return $this->access_token;
     }
 
     /**
@@ -1231,6 +1232,7 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
      * Attempt to gracefully resolve an error condition
      *
      * @param IdentityProviderException $exception
+     * @return bool Completed a refresh request
      * @throws IdentityProviderException
      * @throws FitbitException
      */
