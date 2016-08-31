@@ -145,7 +145,7 @@ echo "My Fitbit access token is: {$access_token}";
 ### Restoring access
 ```php
 // If token has expired, the first request you make will additionally make a refresh request
-$fitbit->setToken(getAccessTokenJsonFromMyDatabase());
+$fitbit->setToken(getAccessTokenJsonAsArrayFromMyDatabase());
 ```
 
 ### Making a request
