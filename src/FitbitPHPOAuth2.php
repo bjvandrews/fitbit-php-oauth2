@@ -109,8 +109,9 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
     public function getOAuth2TokenForOAuth1User($oauth1_token, $oauth1_secret) {
         $refresh_token = "{$oauth1_token}:{$oauth1_secret}";
         $token = $this->provider->getAccessToken('refresh_token', ['refresh_token' => $refresh_token]);
-        $this->emit('obtain-token', [ $token ]);
-        return $token->jsonSerialize();
+        $json_token = $token->jsonSerialize();
+        $this->emit('obtain-token', [ $json_token ]);
+        return $json_token;
     }
 
     /**
@@ -146,7 +147,7 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
         }
         $refresh_token = $this->access_token->getRefreshToken();
         $this->access_token = $this->provider->getAccessToken('refresh_token', ['refresh_token' => $refresh_token]);
-        $this->emit('refresh-token', [ $this->access_token ]);
+        $this->emit('refresh-token', [ $this->access_token->jsonSerialize() ]);
         return $this->access_token;
     }
 
@@ -216,7 +217,7 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
      */
     public function handleAuthResponse($code) {
         $this->access_token = $this->provider->getAccessToken('authorization_code', ['code' => $code]);
-        $this->emit('obtain-token', [ $this->access_token ]);
+        $this->emit('obtain-token', [ $this->access_token->jsonSerialize() ]);
     }
 
     /**

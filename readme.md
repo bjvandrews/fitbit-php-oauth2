@@ -29,13 +29,40 @@ $fitbit = new brulath\fitbit\FitbitPHPOAuth2([
     'auto_request' => true,  // automatically redirect the user to the Fitbit OAuth process if a token doesn't exist
     'auto_refresh' => true,  // automatically refresh expired tokens
 ]);
-$user_oauth2_token = getOAuth2TokenForUserFromMyDatabase();
-$fitbit->setToken($user_oauth2_token);
+$json_encoded_oauth2_token_for_user = getOAuth2TokenForUserFromMyDatabase();
+$fitbit->setToken($json_encoded_oauth2_token_for_user);
 $profile = $fitbit->getProfile();  // read warning below about token refreshes
 print_r($profile);
 ```
 
 ### Token Refreshing Warning
+
+OAuth2 tokens expire; sometimes they expire very quickly. In order to avoid having to manually acquire an updated token
+from Fitbit, the library does so for you when it detects you attempting to perform an action on an expired token. The good
+news is that this means you can be lazy regarding keeping tokens fresh, but the less good news is that you need to be vigilant
+and grab the updated token when it changes.
+
+There are two options for capturing token acquisitions:
+
+#### Subscribe to a token-change event:
+```php
+$fitbit->on('obtain-token', function( string $json_encoded_token ) {
+    print("Acquired first token {$json_encoded_token} for the user; I'll save this to the database.");
+});
+$fitbit->on('refresh-token', function( string $json_encoded_token ) {
+    print("Acquired refresh token {$json_encoded_token} so I should update the database with this user's new OAuth2 token.");
+});
+```
+
+#### Check post-request for token changes
+
+If you do not wish to use events for some reason, you can check for the token after __every__ call you make to the API:
+```php
+$json_encoded_token = $fitbit->getToken();
+if ($old_token != $json_encoded_token) {
+    print("Acquired token {$json_encoded_token}.");
+}
+```
 
 I'm lazy, so I've made this library automatically refresh oauth details whenever they've expired mid-call. That means
  after any call the oauth token may have changed, which you will need to check for (and save the new token). I figure
@@ -82,9 +109,9 @@ If you're lazy (hi!) you can have the library redirect the user to the Fitbit we
 // A session is required to prevent CSRF
 session_start();
 
-$access_token = $fitbit->getToken();  // will redirect user to fitbit ($fitbit->doAuthFlow()). the cookie it sets must survive.
+$json_encoded_oauth2_token_for_user = $fitbit->getToken();  // will redirect user to fitbit ($fitbit->doAuthFlow()). the cookie it sets must survive.
 
-echo "My Fitbit access token is: {$access_token}";
+echo "My Fitbit access token is: {$json_encoded_oauth2_token_for_user}";
 ```
 
 #### Manual Authorization Flow
