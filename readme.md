@@ -49,7 +49,7 @@ There are two options for capturing token acquisitions:
 $fitbit->on('obtain-token', function( [ $token ] ) {
     print("Acquired first token {$token} for the user; I'll save this to the database.");
 });
-$fitbit->on('refresh-token', function( [ $token ]) {
+$fitbit->on('refresh-token', function( [ $token ] ) {
     print("Acquired refresh token {$token} so I should update the database with this user's new OAuth2 token.");
 });
 ```
