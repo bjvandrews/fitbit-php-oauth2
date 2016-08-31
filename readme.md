@@ -46,11 +46,11 @@ There are two options for capturing token acquisitions:
 
 #### Subscribe to a token-change event:
 ```php
-$fitbit->on('obtain-token', function( string $json_encoded_token ) {
-    print("Acquired first token {$json_encoded_token} for the user; I'll save this to the database.");
+$fitbit->on('obtain-token', function( array $token ) {
+    print("Acquired first token {$token} for the user; I'll save this to the database.");
 });
-$fitbit->on('refresh-token', function( string $json_encoded_token ) {
-    print("Acquired refresh token {$json_encoded_token} so I should update the database with this user's new OAuth2 token.");
+$fitbit->on('refresh-token', function( array $token ) {
+    print("Acquired refresh token {$token} so I should update the database with this user's new OAuth2 token.");
 });
 ```
 
@@ -58,9 +58,9 @@ $fitbit->on('refresh-token', function( string $json_encoded_token ) {
 
 If you do not wish to use events for some reason, you can check for the token after __every__ call you make to the API:
 ```php
-$json_encoded_token = $fitbit->getToken();
-if ($old_token != $json_encoded_token) {
-    print("Acquired token {$json_encoded_token}.");
+$token = $fitbit->getToken();
+if ($old_token != $token) {
+    print("Acquired token {$token}.");
 }
 ```
 
@@ -137,9 +137,9 @@ if ($state != $storedState) {
 
 $code = retrieveQueryString('code');  // $_GET['code']
 $fitbit->handleAuthResponse($code);  // emits obtain-token event
-$access_token = $this->getToken();
+$token = $this->getToken();
 
-echo "My Fitbit access token is: {$access_token}";
+echo "My Fitbit access token is: {$token}";
 ```
 
 ### Restoring access
