@@ -104,22 +104,24 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
      *
      * @param $oauth1_token string Existing valid oauth1 token for a user
      * @param $oauth1_secret string Existing valid oauth1 secret for a user
-     * @returns Mixed OAuth2 json-serialized token [access_token, refresh_token, expires] for use in this library
+     * @param bool $serialised return json-serialised tokens (array)
+     * @return mixed OAuth2 json-serialized token [access_token, refresh_token, expires] for use in this library
      */
-    public function getOAuth2TokenForOAuth1User($oauth1_token, $oauth1_secret) {
+    public function getOAuth2TokenForOAuth1User($oauth1_token, $oauth1_secret, $serialised = true) {
         $refresh_token = "{$oauth1_token}:{$oauth1_secret}";
         $token = $this->provider->getAccessToken('refresh_token', ['refresh_token' => $refresh_token]);
-        $json_token = $token->jsonSerialize();
+        $json_token = $serialised ? $token->jsonSerialize() : $token;
         $this->emit('obtain-token', [ $json_token ]);
         return $json_token;
     }
 
     /**
      * Get JSON-serialised token
+     * @param bool $serialised return json-serialised tokens (array)
      * @return mixed
      * @throws FitbitTokenMissingException
      */
-    public function getToken() {
+    public function getToken($serialised = true) {
         if (empty($this->access_token)) {
             if ($this->automatically_request_token) {
                 $this->doAuthFlow();
@@ -127,28 +129,32 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
                 throw new FitbitTokenMissingException();
             }
         }
-        return $this->access_token->jsonSerialize();
+        return $serialised ? $this->access_token->jsonSerialize() : $this->access_token;
     }
 
     /**
+     * @param bool $serialised $token is a json-serialised token (array)
      * @param $token string JSON-serialized token
      */
-    public function setToken($token) {
-        $this->access_token = new AccessToken($token);
+    public function setToken($token, $serialised=true) {
+        $this->access_token = $serialised ? new AccessToken($token) : $token;
     }
 
     /**
+     * @param bool $serialised return json-serialised tokens (array)
      * @event Sabre\Event refresh-token Fires on new token received - you need to capture this
+     * @return array|AccessToken
      * @throws FitbitTokenMissingException
      */
-    public function refreshToken() {
+    public function refreshToken($serialised=true) {
         if (empty($this->access_token)) {
             throw new FitbitTokenMissingException();
         }
         $refresh_token = $this->access_token->getRefreshToken();
         $this->access_token = $this->provider->getAccessToken('refresh_token', ['refresh_token' => $refresh_token]);
-        $this->emit('refresh-token', [ $this->access_token->jsonSerialize() ]);
-        return $this->access_token;
+        $t = $serialised ? $this->access_token->jsonSerialize() : $this->access_token;
+        $this->emit('refresh-token', [ $t ]);
+        return $t;
     }
 
     /**
