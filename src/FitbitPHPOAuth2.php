@@ -1133,7 +1133,7 @@ class FitbitPHPOAuth2 implements EventEmitterInterface, LoggerAwareInterface {
         }
         $path = !empty($path) ? "/{$path}" : '';
 
-        return $this->post("user/-" . $path . "/apiSubscriptions/" . $id, null, null, $userHeaders);
+        return $this->post("POST", "user/-" . $path . "/apiSubscriptions/" . $id, null, null, $userHeaders);
     }
 
     /**
