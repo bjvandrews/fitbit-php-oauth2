@@ -1,3 +1,5 @@
+# Not maintained, archived.
+
 # Unofficial Fitbit Client Library for PHP using OAuth2
 
 Wholesale borrows large portions of [djchen/OAuth2-Fitbit](https://github.com/djchen/oauth2-fitbit) (minor change to
